@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Munich Travel Guide</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            height: 100vh;
+        }
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+        #map { height: 100%; width: 100%; }
+
+        .title-bar {
+            position: absolute; top: 16px; left: 60px; z-index: 1000;
+            background: linear-gradient(135deg, #1a365d, #2563eb);
+            color: #fff; padding: 14px 24px; border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+        .title-bar h1 { font-size: 22px; font-weight: 700; }
+        .title-bar p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+
+        .sidebar {
+            width: 300px; height: 100vh; overflow-y: auto;
+            background: #fff; border-left: 1px solid #e0e0e0;
+            padding: 20px 16px; flex-shrink: 0;
+        }
+        .sidebar h2 {
+            font-size: 15px; font-weight: 700; color: #1a365d;
+            border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 16px;
+        }
+        .cat-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #555; margin: 18px 0 8px 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .cat-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .loc {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 5px 0; border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .loc:hover { background: #f8f9ff; }
+        .num {
+            width: 26px; height: 26px; border-radius: 50%;
+            color: #fff; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+        }
+        .loc-info { flex: 1; min-width: 0; }
+        .loc-name { font-size: 13px; font-weight: 600; color: #222; }
+        .loc-desc { font-size: 11px; color: #888; line-height: 1.3; }
+        .loc-toddler { font-size: 11px; }
+
+        .stay-box {
+            background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px;
+            padding: 10px 12px; margin-top: 16px;
+        }
+        .stay-box .loc-name { color: #2e7d32; }
+
+        .day-trip-note {
+            background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 8px;
+            padding: 10px 12px; margin-top: 12px;
+        }
+        .day-trip-note .loc-name { color: #6b21a8; }
+
+        .legend-footer {
+            margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;
+            font-size: 11px; color: #999; text-align: center;
+        }
+
+        .custom-marker { background: transparent !important; border: none !important; }
+
+        .walk-label {
+            background: rgba(80,80,80,0.85) !important; color: #fff !important;
+            padding: 2px 6px !important; border-radius: 4px !important;
+            font-size: 10px !important; font-weight: 600 !important;
+            white-space: nowrap !important; border: none !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-content { margin: 12px 14px; font-size: 13px; }
+        .popup-title { font-weight: 700; font-size: 15px; color: #1a365d; margin-bottom: 6px; }
+        .popup-desc { color: #555; margin-bottom: 6px; }
+        .popup-meta { color: #888; font-size: 12px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div class="title-bar">
+            <h1>🇩🇪 Munich Travel Guide</h1>
+            <p>Family-Friendly Attractions & Hidden Gems · Jun 8–11</p>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <div class="sidebar" id="sidebar"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    const COLORS = {
+        transport: '#dc2626',
+        attraction: '#2563eb',
+        food: '#ea580c',
+        gem: '#7c3aed',
+        stay: '#16a34a'
+    };
+
+    const locations = [
+        // Transport
+        { n:1, cat:'transport', name:'München Hauptbahnhof', lat:48.1408, lng:11.5593,
+          desc:'Main train station — your arrival point', cost:'N/A', toddler:'🟢',
+          walk:'Central hub' },
+
+        // Core Attractions — NOTE: slightly offset coords for dense cluster
+        { n:2, cat:'attraction', name:'Marienplatz & Glockenspiel', lat:48.1380, lng:11.5755,
+          desc:'Iconic square, hourly Glockenspiel chimes', cost:'Free', toddler:'🟡',
+          walk:'City centre' },
+        { n:3, cat:'attraction', name:'English Garden', lat:48.1641, lng:11.5841,
+          desc:'One of the world\'s largest urban parks', cost:'Free', toddler:'🟢',
+          walk:'20 min from Marienplatz' },
+        { n:4, cat:'attraction', name:'Hofbräuhaus', lat:48.1390, lng:11.5810,
+          desc:'World-famous beer hall — touristy but iconic', cost:'€€', toddler:'🟡',
+          walk:'2 min from Marienplatz' },
+        { n:5, cat:'attraction', name:'Viktualienmarkt', lat:48.1335, lng:11.5775,
+          desc:'Traditional food market, great for snacking', cost:'€–€€', toddler:'🟢',
+          walk:'3 min from Marienplatz' },
+        { n:6, cat:'attraction', name:'Nymphenburg Palace', lat:48.1584, lng:11.5032,
+          desc:'Baroque palace with stunning gardens', cost:'€5–13', toddler:'🟡',
+          walk:'30 min (tram)' },
+        { n:7, cat:'attraction', name:'Deutsches Museum', lat:48.1298, lng:11.5836,
+          desc:'World\'s largest science & tech museum', cost:'€15', toddler:'🟡',
+          walk:'15 min from Marienplatz' },
+        { n:8, cat:'attraction', name:'St. Peter\'s Church', lat:48.1355, lng:11.5740,
+          desc:'Munich\'s oldest church, 306-step tower views', cost:'€2.50', toddler:'🟡',
+          walk:'1 min from Marienplatz' },
+        { n:9, cat:'attraction', name:'Eisbachwelle', lat:48.1437, lng:11.5872,
+          desc:'Famous river surfing wave — amazing to watch', cost:'Free', toddler:'🟢',
+          walk:'15 min from Marienplatz' },
+
+        // Beer Gardens & Food
+        { n:10, cat:'food', name:'Augustiner Keller', lat:48.1445, lng:11.5524,
+          desc:'"Much better than Hofbräuhaus" — Reddit', cost:'€€', toddler:'🟢',
+          walk:'12 min from Marienplatz' },
+        { n:11, cat:'food', name:'Michaeligarten', lat:48.1156, lng:11.6247,
+          desc:'Hidden beer garden by the water in Ostpark', cost:'€', toddler:'🟢',
+          walk:'25 min (U-Bahn)' },
+        { n:12, cat:'food', name:'Hirschgarten', lat:48.1522, lng:11.5130,
+          desc:'World\'s largest beer garden + deer park!', cost:'€€', toddler:'🟢',
+          walk:'25 min (tram)' },
+        { n:13, cat:'food', name:'Hofbräukeller', lat:48.1310, lng:11.5927,
+          desc:'Quieter Hofbräu alternative, great outdoor garden', cost:'€€', toddler:'🟢',
+          walk:'18 min from Marienplatz' },
+
+        // Hidden Gems
+        { n:14, cat:'gem', name:'Alte Utting Bar', lat:48.1187, lng:11.5393,
+          desc:'Old boat perched on a bridge — unique bar', cost:'€€', toddler:'🔴',
+          walk:'25 min (evening only)' },
+        { n:15, cat:'gem', name:'Olympiaberg Sunset', lat:48.1751, lng:11.5506,
+          desc:'Best sunset views in Munich — 360° panorama', cost:'Free', toddler:'🟢',
+          walk:'30 min (U-Bahn)' },
+        { n:16, cat:'gem', name:'Frauenkirche', lat:48.1405, lng:11.5695,
+          desc:'Cathedral with the devil\'s footprint legend', cost:'Free', toddler:'🟢',
+          walk:'2 min from Marienplatz' },
+    ];
+
+    // Build sidebar
+    const sb = document.getElementById('sidebar');
+    let html = '<h2>📍 Location Key</h2>';
+
+    const cats = [
+        { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
+        { id:'food', label:'🍺 Beer Gardens & Food', color: COLORS.food },
+        { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+    ];
+
+    cats.forEach(c => {
+        html += `<div class="cat-label"><span class="cat-dot" style="background:${c.color}"></span>${c.label}</div>`;
+        locations.filter(l => l.cat === c.id).forEach(l => {
+            html += `<div class="loc" onclick="flyTo(${l.lat},${l.lng},${l.n})">
+                <div class="num" style="background:${c.color}">${l.n}</div>
+                <div class="loc-info">
+                    <div class="loc-name">${l.name}</div>
+                    <div class="loc-desc">${l.desc}</div>
+                    <div class="loc-toddler">${l.toddler} ${l.cost} · ${l.walk}</div>
+                </div>
+            </div>`;
+        });
+    });
+
+    // Stay area box
+    html += `<div class="stay-box">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
+        <div class="loc-info">
+            <div class="loc-name">Altstadt (Old Town)</div>
+            <div class="loc-desc">Between Hauptbahnhof & Marienplatz. Walking distance to everything. ~€150/night for 1-bed apartment.</div>
+        </div>
+    </div>`;
+
+    // Day trip note
+    html += `<div class="day-trip-note">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>🚂 Day Trip</div>
+        <div class="loc-info">
+            <div class="loc-name">Kloster Andechs</div>
+            <div class="loc-desc">Monastery brewery in the mountains. 45 min by S-Bahn + bus. €8 entry. 🟢 Family-friendly beer garden with views.</div>
+        </div>
+    </div>`;
+
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Click markers or sidebar items for details</div>`;
+    sb.innerHTML = html;
+
+    // Initialize map — focused on central Munich, NOT including Kloster Andechs
+    const map = L.map('map', {
+        center: [48.1450, 11.5650],
+        zoom: 13,
+        zoomControl: true,
+        maxZoom: 18,
+        minZoom: 12
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+
+    // Stay area polygon
+    L.polygon([
+        [48.1435, 11.5545], [48.1435, 11.5810],
+        [48.1325, 11.5810], [48.1325, 11.5545]
+    ], {
+        fillColor: COLORS.stay, fillOpacity: 0.12,
+        color: COLORS.stay, weight: 2, opacity: 0.5,
+        dashArray: '6,4'
+    }).addTo(map);
+
+    // Markers
+    const markers = {};
+    locations.forEach(l => {
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+                background:${COLORS[l.cat]}; color:#fff;
+                width:${size}px; height:${size}px; border-radius:50%;
+                border:2.5px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.35);
+                display:flex; align-items:center; justify-content:center;
+                font-weight:700; font-size:${fontSize}px; line-height:1;
+                cursor:pointer;
+            ">${l.n}</div>`,
+            iconSize: [size, size],
+            iconAnchor: [size/2, size/2]
+        });
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        m.bindPopup(`
+            <div class="popup-title">${l.n}. ${l.name}</div>
+            <div class="popup-desc">${l.desc}</div>
+            <div class="popup-meta">
+                💰 ${l.cost} · ${l.toddler} Toddler · 🚶 ${l.walk}
+            </div>
+        `, { maxWidth: 260 });
+        markers[l.n] = m;
+    });
+
+    // Walking time lines (only the most useful ones)
+    const walks = [
+        { from:[48.1408,11.5593], to:[48.1380,11.5755], label:'15 min' },   // Hbf → Marienplatz
+        { from:[48.1437,11.5872], to:[48.1641,11.5841], label:'5 min' },    // Eisbach → English Garden
+    ];
+
+    walks.forEach(w => {
+        L.polyline([w.from, w.to], {
+            color: '#94a3b8', weight: 2.5, opacity: 0.5, dashArray: '6,6'
+        }).addTo(map);
+        const mid = [(w.from[0]+w.to[0])/2, (w.from[1]+w.to[1])/2];
+        L.marker(mid, {
+            icon: L.divIcon({
+                className: 'custom-marker',
+                html: `<div class="walk-label">${w.label}</div>`,
+                iconAnchor: [20, 8]
+            }),
+            interactive: false
+        }).addTo(map);
+    });
+
+    // Fit bounds to all markers (not including Kloster Andechs)
+    const allCoords = locations.map(l => [l.lat, l.lng]);
+    map.fitBounds(L.latLngBounds(allCoords).pad(0.05));
+
+    // Fly to function for sidebar clicks
+    function flyTo(lat, lng, n) {
+        map.flyTo([lat, lng], 16, { duration: 0.8 });
+        setTimeout(() => markers[n].openPopup(), 900);
+    }
+    </script>
+</body>
+</html>

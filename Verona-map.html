@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verona Travel Guide</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            height: 100vh;
+        }
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+        #map { height: 100%; width: 100%; }
+
+        .title-bar {
+            position: absolute; top: 16px; left: 60px; z-index: 1000;
+            background: linear-gradient(135deg, #1a365d, #2563eb);
+            color: #fff; padding: 14px 24px; border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+        .title-bar h1 { font-size: 22px; font-weight: 700; }
+        .title-bar p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+
+        .sidebar {
+            width: 300px; height: 100vh; overflow-y: auto;
+            background: #fff; border-left: 1px solid #e0e0e0;
+            padding: 20px 16px; flex-shrink: 0;
+        }
+        .sidebar h2 {
+            font-size: 15px; font-weight: 700; color: #1a365d;
+            border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 16px;
+        }
+        .cat-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #555; margin: 18px 0 8px 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .cat-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .loc {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 5px 0; border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .loc:hover { background: #f8f9ff; }
+        .num {
+            width: 26px; height: 26px; border-radius: 50%;
+            color: #fff; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+        }
+        .loc-info { flex: 1; min-width: 0; }
+        .loc-name { font-size: 13px; font-weight: 600; color: #222; }
+        .loc-desc { font-size: 11px; color: #888; line-height: 1.3; }
+        .loc-toddler { font-size: 11px; }
+
+        .stay-box {
+            background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px;
+            padding: 10px 12px; margin-top: 16px;
+        }
+        .stay-box .loc-name { color: #2e7d32; }
+
+        .day-trip-note {
+            background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 8px;
+            padding: 10px 12px; margin-top: 12px;
+        }
+        .day-trip-note .loc-name { color: #6b21a8; }
+
+        .legend-footer {
+            margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;
+            font-size: 11px; color: #999; text-align: center;
+        }
+
+        .custom-marker { background: transparent !important; border: none !important; }
+
+        .walk-label {
+            background: rgba(80,80,80,0.85) !important; color: #fff !important;
+            padding: 2px 6px !important; border-radius: 4px !important;
+            font-size: 10px !important; font-weight: 600 !important;
+            white-space: nowrap !important; border: none !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-content { margin: 12px 14px; font-size: 13px; }
+        .popup-title { font-weight: 700; font-size: 15px; color: #1a365d; margin-bottom: 6px; }
+        .popup-desc { color: #555; margin-bottom: 6px; }
+        .popup-meta { color: #888; font-size: 12px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div class="title-bar">
+            <h1>🇮🇹 Verona Travel Guide</h1>
+            <p>Romeo & Juliet's City of Love · Jun 13–15</p>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <div class="sidebar" id="sidebar"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    const COLORS = {
+        transport: '#dc2626',
+        attraction: '#2563eb',
+        food: '#ea580c',
+        gem: '#7c3aed',
+        stay: '#16a34a'
+    };
+
+    const locations = [
+        // Transport
+        { n:1, cat:'transport', name:'Verona Porta Nuova', lat:45.4290, lng:10.9825,
+          desc:'Main train station — your arrival point', cost:'N/A', toddler:'🟢',
+          walk:'Gateway to city' },
+
+        // Core Attractions (slightly offset for dense historic center)
+        { n:2, cat:'attraction', name:'Roman Arena', lat:45.4384, lng:10.9942,
+          desc:'Perfectly preserved Roman amphitheater', cost:'€10', toddler:'🟢',
+          walk:'Heart of Verona' },
+        { n:3, cat:'attraction', name:'Juliet\'s Balcony', lat:45.4422, lng:10.9988,
+          desc:'Famous balcony & statue (very touristy!)', cost:'Free', toddler:'🟡',
+          walk:'3 min from Arena' },
+        { n:4, cat:'attraction', name:'Piazza delle Erbe', lat:45.4433, lng:10.9972,
+          desc:'Medieval market square with cafés', cost:'Free', toddler:'🟢',
+          walk:'5 min from Arena' },
+        { n:5, cat:'attraction', name:'Ponte Pietra', lat:45.4483, lng:11.0003,
+          desc:'Ancient Roman bridge over Adige River', cost:'Free', toddler:'🟢',
+          walk:'8 min from center' },
+        { n:6, cat:'attraction', name:'Castelvecchio Bridge', lat:45.4396, lng:10.9870,
+          desc:'14th-century fortress bridge with river views', cost:'€6', toddler:'🟢',
+          walk:'5 min from Arena' },
+
+        // Hidden Gems
+        { n:7, cat:'gem', name:'Giardino Giusti', lat:45.4470, lng:11.0060,
+          desc:'Renaissance garden with maze & city views', cost:'€8', toddler:'🟢',
+          walk:'12 min from center' },
+        { n:8, cat:'gem', name:'Basilica San Zeno', lat:45.4412, lng:10.9770,
+          desc:'Romanesque church with Mantegna masterpiece', cost:'€3', toddler:'🟡',
+          walk:'15 min from center' },
+        { n:9, cat:'gem', name:'Funicular to Castel San Pietro', lat:45.4490, lng:11.0010,
+          desc:'Panoramic views over Verona\'s rooftops', cost:'€2', toddler:'🟢',
+          walk:'10 min from center' },
+
+        // Food
+        { n:10, cat:'food', name:'Osteria La Fregola', lat:45.4410, lng:10.9960,
+          desc:'Hidden gem recommended by Reddit locals', cost:'€€', toddler:'🟢',
+          walk:'4 min from Arena' },
+        { n:11, cat:'food', name:'Café al Teatro', lat:45.4380, lng:10.9935,
+          desc:'Best gelato near the Arena — local favorite', cost:'€', toddler:'🟢',
+          walk:'2 min from Arena' },
+    ];
+
+    // Build sidebar
+    const sb = document.getElementById('sidebar');
+    let html = '<h2>📍 Location Key</h2>';
+
+    const cats = [
+        { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
+        { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+        { id:'food', label:'🍝 Food', color: COLORS.food },
+    ];
+
+    cats.forEach(c => {
+        html += `<div class="cat-label"><span class="cat-dot" style="background:${c.color}"></span>${c.label}</div>`;
+        locations.filter(l => l.cat === c.id).forEach(l => {
+            html += `<div class="loc" onclick="flyTo(${l.lat},${l.lng},${l.n})">
+                <div class="num" style="background:${c.color}">${l.n}</div>
+                <div class="loc-info">
+                    <div class="loc-name">${l.name}</div>
+                    <div class="loc-desc">${l.desc}</div>
+                    <div class="loc-toddler">${l.toddler} ${l.cost} · ${l.walk}</div>
+                </div>
+            </div>`;
+        });
+    });
+
+    // Stay area box
+    html += `<div class="stay-box">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
+        <div class="loc-info">
+            <div class="loc-name">Centro Storico</div>
+            <div class="loc-desc">Within the historic center near Arena and Piazza delle Erbe. Easy walking to all sights. ~€90/night for 1-bed apartment.</div>
+        </div>
+    </div>`;
+
+    // Day trip note
+    html += `<div class="day-trip-note">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>🚂 Day Trip</div>
+        <div class="loc-info">
+            <div class="loc-name">Lake Garda / Sirmione</div>
+            <div class="loc-desc">Beautiful lake town with thermal springs and castle. 25 min by train to Desenzano + bus. 🟢 Family-friendly lakefront.</div>
+        </div>
+    </div>`;
+
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Click markers or sidebar items for details</div>`;
+    sb.innerHTML = html;
+
+    // Initialize map — focused on compact Verona center
+    const map = L.map('map', {
+        center: [45.4420, 11.0000],
+        zoom: 15,
+        zoomControl: true,
+        maxZoom: 18,
+        minZoom: 13
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+
+    // Stay area polygon (Centro Storico)
+    L.polygon([
+        [45.4460, 10.9920], [45.4460, 11.0020],
+        [45.4360, 11.0020], [45.4360, 10.9920]
+    ], {
+        fillColor: COLORS.stay, fillOpacity: 0.12,
+        color: COLORS.stay, weight: 2, opacity: 0.5,
+        dashArray: '6,4'
+    }).addTo(map);
+
+    // Markers
+    const markers = {};
+    locations.forEach(l => {
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+                background:${COLORS[l.cat]}; color:#fff;
+                width:${size}px; height:${size}px; border-radius:50%;
+                border:2.5px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.35);
+                display:flex; align-items:center; justify-content:center;
+                font-weight:700; font-size:${fontSize}px; line-height:1;
+                cursor:pointer;
+            ">${l.n}</div>`,
+            iconSize: [size, size],
+            iconAnchor: [size/2, size/2]
+        });
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        m.bindPopup(`
+            <div class="popup-title">${l.n}. ${l.name}</div>
+            <div class="popup-desc">${l.desc}</div>
+            <div class="popup-meta">
+                💰 ${l.cost} · ${l.toddler} Toddler · 🚶 ${l.walk}
+            </div>
+        `, { maxWidth: 260 });
+        markers[l.n] = m;
+    });
+
+    // Walking time lines (key connections in compact Verona)
+    const walks = [
+        { from:[45.4290,10.9825], to:[45.4384,10.9942], label:'12 min' },   // Station → Arena
+        { from:[45.4384,10.9942], to:[45.4422,10.9988], label:'3 min' },    // Arena → Juliet's Balcony
+        { from:[45.4433,10.9972], to:[45.4483,11.0003], label:'6 min' },    // Piazza Erbe → Ponte Pietra
+        { from:[45.4410,10.9960], to:[45.4380,10.9935], label:'2 min' },    // Restaurant → Gelato
+    ];
+
+    walks.forEach(w => {
+        L.polyline([w.from, w.to], {
+            color: '#94a3b8', weight: 2.5, opacity: 0.5, dashArray: '6,6'
+        }).addTo(map);
+        const mid = [(w.from[0]+w.to[0])/2, (w.from[1]+w.to[1])/2];
+        L.marker(mid, {
+            icon: L.divIcon({
+                className: 'custom-marker',
+                html: `<div class="walk-label">${w.label}</div>`,
+                iconAnchor: [20, 8]
+            }),
+            interactive: false
+        }).addTo(map);
+    });
+
+    // Fit bounds to all markers
+    const allCoords = locations.map(l => [l.lat, l.lng]);
+    map.fitBounds(L.latLngBounds(allCoords).pad(0.05));
+
+    // Fly to function for sidebar clicks
+    function flyTo(lat, lng, n) {
+        map.flyTo([lat, lng], 16, { duration: 0.8 });
+        setTimeout(() => markers[n].openPopup(), 900);
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venice Travel Guide</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            height: 100vh;
+        }
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+        #map { height: 100%; width: 100%; }
+
+        .title-bar {
+            position: absolute; top: 16px; left: 60px; z-index: 1000;
+            background: linear-gradient(135deg, #1a365d, #2563eb);
+            color: #fff; padding: 14px 24px; border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+        .title-bar h1 { font-size: 22px; font-weight: 700; }
+        .title-bar p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+
+        .sidebar {
+            width: 300px; height: 100vh; overflow-y: auto;
+            background: #fff; border-left: 1px solid #e0e0e0;
+            padding: 20px 16px; flex-shrink: 0;
+        }
+        .sidebar h2 {
+            font-size: 15px; font-weight: 700; color: #1a365d;
+            border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 16px;
+        }
+        .cat-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #555; margin: 18px 0 8px 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .cat-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .loc {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 5px 0; border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .loc:hover { background: #f8f9ff; }
+        .num {
+            width: 26px; height: 26px; border-radius: 50%;
+            color: #fff; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+        }
+        .loc-info { flex: 1; min-width: 0; }
+        .loc-name { font-size: 13px; font-weight: 600; color: #222; }
+        .loc-desc { font-size: 11px; color: #888; line-height: 1.3; }
+        .loc-toddler { font-size: 11px; }
+
+        .stay-box {
+            background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px;
+            padding: 10px 12px; margin-top: 16px;
+        }
+        .stay-box .loc-name { color: #2e7d32; }
+
+        .day-trip-note {
+            background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 8px;
+            padding: 10px 12px; margin-top: 12px;
+        }
+        .day-trip-note .loc-name { color: #6b21a8; }
+
+        .legend-footer {
+            margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;
+            font-size: 11px; color: #999; text-align: center;
+        }
+
+        .custom-marker { background: transparent !important; border: none !important; }
+
+        .walk-label {
+            background: rgba(80,80,80,0.85) !important; color: #fff !important;
+            padding: 2px 6px !important; border-radius: 4px !important;
+            font-size: 10px !important; font-weight: 600 !important;
+            white-space: nowrap !important; border: none !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-content { margin: 12px 14px; font-size: 13px; }
+        .popup-title { font-weight: 700; font-size: 15px; color: #1a365d; margin-bottom: 6px; }
+        .popup-desc { color: #555; margin-bottom: 6px; }
+        .popup-meta { color: #888; font-size: 12px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div class="title-bar">
+            <h1>🇮🇹 Venice Travel Guide</h1>
+            <p>Islands, Canals & Hidden Gems · Jun 15–18</p>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <div class="sidebar" id="sidebar"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    const COLORS = {
+        transport: '#dc2626',
+        attraction: '#2563eb',
+        food: '#ea580c',
+        gem: '#7c3aed',
+        stay: '#16a34a'
+    };
+
+    const locations = [
+        // Transport
+        { n:1, cat:'transport', name:'Venezia Santa Lucia Station', lat:45.4414, lng:12.3211,
+          desc:'Main train station — your arrival point', cost:'N/A', toddler:'🟢',
+          walk:'Transport hub', pram:'Carrier recommended for bridges' },
+
+        // Core Attractions & Islands
+        { n:2, cat:'attraction', name:'St Mark\'s Square & Basilica', lat:45.4343, lng:12.3388,
+          desc:'Venice\'s iconic heart — stunning Byzantine architecture', cost:'Free/€5', toddler:'🟡',
+          walk:'Historic center', pram:'Flat square, but busy. Carrier for crowds' },
+        { n:3, cat:'attraction', name:'Rialto Bridge', lat:45.4381, lng:12.3360,
+          desc:'Famous arched bridge over Grand Canal', cost:'Free', toddler:'🟡',
+          walk:'10 min from St Mark\'s', pram:'Steps! Carrier essential' },
+        { n:4, cat:'attraction', name:'Basilica San Giorgio Maggiore', lat:45.4294, lng:12.3433,
+          desc:'Island church opposite St Mark\'s — best views', cost:'€6', toddler:'🟡',
+          walk:'5 min boat ride', pram:'Accessible by boat, some stairs' },
+        { n:5, cat:'attraction', name:'Gondola Docks Area', lat:45.4340, lng:12.3350,
+          desc:'Traditional gondola rides along the canals', cost:'€80+', toddler:'🟢',
+          walk:'Near St Mark\'s', pram:'Leave pram behind — enjoy the ride!' },
+        { n:6, cat:'attraction', name:'Murano', lat:45.4585, lng:12.3520,
+          desc:'Glass blowing island — famous for Venetian glass', cost:'€7.50 boat', toddler:'🟡',
+          walk:'40 min by vaporetto', pram:'Flat island, pram-friendly' },
+        { n:7, cat:'attraction', name:'Burano', lat:45.4854, lng:12.4165,
+          desc:'Colorful houses island — incredibly photogenic', cost:'€7.50 boat', toddler:'🟢',
+          walk:'90 min by vaporetto', pram:'Flat, pram-friendly, amazing for photos' },
+        { n:8, cat:'attraction', name:'Lido Beach', lat:45.4060, lng:12.3650,
+          desc:'Sandy beach island — perfect for toddler play!', cost:'€7.50 boat', toddler:'🟢',
+          walk:'20 min by vaporetto', pram:'Beach wheels struggle, but worth it!' },
+
+        // Neighbourhoods & Food
+        { n:9, cat:'food', name:'Dorsoduro District', lat:45.4310, lng:12.3280,
+          desc:'Artsy neighbourhood with canal-side restaurants', cost:'€€', toddler:'🟢',
+          walk:'15 min from station', pram:'Mix of bridges — carrier helpful' },
+        { n:10, cat:'food', name:'Cannaregio / Bacari Wine Bars', lat:45.4440, lng:12.3310,
+          desc:'Local drinking culture — cicchetti (small plates)', cost:'€€', toddler:'🟡',
+          walk:'10 min from station', pram:'Narrow streets, some steps' },
+        { n:11, cat:'food', name:'Orto dei Carmini Hidden Garden', lat:45.4320, lng:12.3240,
+          desc:'Secret garden oasis away from crowds', cost:'Free', toddler:'🟢',
+          walk:'20 min from St Mark\'s', pram:'Peaceful spot, pram-accessible' },
+
+        // Hidden Gems
+        { n:12, cat:'gem', name:'Basilica dei Frari', lat:45.4367, lng:12.3264,
+          desc:'Massive Gothic church with Titian masterpieces', cost:'€3', toddler:'🟡',
+          walk:'15 min from Rialto', pram:'Some steps, but manageable' },
+        { n:13, cat:'gem', name:'Peggy Guggenheim Collection', lat:45.4309, lng:12.3319,
+          desc:'Modern art in a Grand Canal palace', cost:'€18', toddler:'🟡',
+          walk:'10 min from St Mark\'s', pram:'Museum accessible, garden lovely' },
+    ];
+
+    // Build sidebar
+    const sb = document.getElementById('sidebar');
+    let html = '<h2>📍 Location Key</h2>';
+
+    const cats = [
+        { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'attraction', label:'🏛️ Attractions & Islands', color: COLORS.attraction },
+        { id:'food', label:'🍝 Neighbourhoods & Food', color: COLORS.food },
+        { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+    ];
+
+    cats.forEach(c => {
+        html += `<div class="cat-label"><span class="cat-dot" style="background:${c.color}"></span>${c.label}</div>`;
+        locations.filter(l => l.cat === c.id).forEach(l => {
+            html += `<div class="loc" onclick="flyTo(${l.lat},${l.lng},${l.n})">
+                <div class="num" style="background:${c.color}">${l.n}</div>
+                <div class="loc-info">
+                    <div class="loc-name">${l.name}</div>
+                    <div class="loc-desc">${l.desc}</div>
+                    <div class="loc-toddler">${l.toddler} ${l.cost} · ${l.walk}</div>
+                </div>
+            </div>`;
+        });
+    });
+
+    // Stay area box
+    html += `<div class="stay-box">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
+        <div class="loc-info">
+            <div class="loc-name">Dorsoduro / Near Santa Lucia</div>
+            <div class="loc-desc">Balance of convenience and local atmosphere. Walking distance to station + attractions. ~€180/night for canal-view apartment.</div>
+        </div>
+    </div>`;
+
+    // Burano note (since it might not fit on main map view)
+    html += `<div class="day-trip-note">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.attraction}"></span>🚤 Island Adventure</div>
+        <div class="loc-info">
+            <div class="loc-name">Burano (Colorful Island)</div>
+            <div class="loc-desc">90 min by vaporetto — might be sidebar-only due to distance, but absolutely worth the trip! Most Instagram-worthy spot in Venice. 🟢 Perfect for toddlers.</div>
+        </div>
+    </div>`;
+
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>⚠️ Venice bridges are tough with prams — baby carrier recommended!<br>Click markers or sidebar items for details</div>`;
+    sb.innerHTML = html;
+
+    // Initialize map — focused on central Venice, with wider zoom to show islands
+    const map = L.map('map', {
+        center: [45.4380, 12.3450],
+        zoom: 12,
+        zoomControl: true,
+        maxZoom: 18,
+        minZoom: 10
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+
+    // Stay area polygon (Dorsoduro / near Santa Lucia area)
+    L.polygon([
+        [45.4380, 12.3150], [45.4380, 12.3350],
+        [45.4280, 12.3350], [45.4280, 12.3150]
+    ], {
+        fillColor: COLORS.stay, fillOpacity: 0.12,
+        color: COLORS.stay, weight: 2, opacity: 0.5,
+        dashArray: '6,4'
+    }).addTo(map);
+
+    // Markers
+    const markers = {};
+    locations.forEach(l => {
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+                background:${COLORS[l.cat]}; color:#fff;
+                width:${size}px; height:${size}px; border-radius:50%;
+                border:2.5px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.35);
+                display:flex; align-items:center; justify-content:center;
+                font-weight:700; font-size:${fontSize}px; line-height:1;
+                cursor:pointer;
+            ">${l.n}</div>`,
+            iconSize: [size, size],
+            iconAnchor: [size/2, size/2]
+        });
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        m.bindPopup(`
+            <div class="popup-title">${l.n}. ${l.name}</div>
+            <div class="popup-desc">${l.desc}</div>
+            <div class="popup-meta">
+                💰 ${l.cost} · ${l.toddler} Toddler · 🚶 ${l.walk}<br>
+                👶 ${l.pram}
+            </div>
+        `, { maxWidth: 280 });
+        markers[l.n] = m;
+    });
+
+    // Walking time lines (key connections in Venice)
+    const walks = [
+        { from:[45.4414,12.3211], to:[45.4381,12.3360], label:'15 min' },   // Station → Rialto
+        { from:[45.4381,12.3360], to:[45.4343,12.3388], label:'10 min' },   // Rialto → St Mark's
+    ];
+
+    walks.forEach(w => {
+        L.polyline([w.from, w.to], {
+            color: '#94a3b8', weight: 2.5, opacity: 0.5, dashArray: '6,6'
+        }).addTo(map);
+        const mid = [(w.from[0]+w.to[0])/2, (w.from[1]+w.to[1])/2];
+        L.marker(mid, {
+            icon: L.divIcon({
+                className: 'custom-marker',
+                html: `<div class="walk-label">${w.label}</div>`,
+                iconAnchor: [20, 8]
+            }),
+            interactive: false
+        }).addTo(map);
+    });
+
+    // Fit bounds to show most locations (excluding Burano to keep center reasonable)
+    const mainCoords = locations.filter(l => l.n !== 7).map(l => [l.lat, l.lng]); // Exclude Burano
+    map.fitBounds(L.latLngBounds(mainCoords).pad(0.08));
+
+    // Fly to function for sidebar clicks
+    function flyTo(lat, lng, n) {
+        // Special handling for distant Burano - zoom out more
+        const zoomLevel = n === 7 ? 11 : 15;
+        map.flyTo([lat, lng], zoomLevel, { duration: 0.8 });
+        setTimeout(() => markers[n].openPopup(), 900);
+    }
+    </script>
+</body>
+</html>

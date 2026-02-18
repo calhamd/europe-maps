@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Florence Travel Guide</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            height: 100vh;
+        }
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+        #map { height: 100%; width: 100%; }
+
+        .title-bar {
+            position: absolute; top: 16px; left: 60px; z-index: 1000;
+            background: linear-gradient(135deg, #1a365d, #2563eb);
+            color: #fff; padding: 14px 24px; border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+        .title-bar h1 { font-size: 22px; font-weight: 700; }
+        .title-bar p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+
+        .sidebar {
+            width: 300px; height: 100vh; overflow-y: auto;
+            background: #fff; border-left: 1px solid #e0e0e0;
+            padding: 20px 16px; flex-shrink: 0;
+        }
+        .sidebar h2 {
+            font-size: 15px; font-weight: 700; color: #1a365d;
+            border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 16px;
+        }
+        .cat-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #555; margin: 18px 0 8px 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .cat-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .loc {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 5px 0; border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .loc:hover { background: #f8f9ff; }
+        .num {
+            width: 26px; height: 26px; border-radius: 50%;
+            color: #fff; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+        }
+        .loc-info { flex: 1; min-width: 0; }
+        .loc-name { font-size: 13px; font-weight: 600; color: #222; }
+        .loc-desc { font-size: 11px; color: #888; line-height: 1.3; }
+        .loc-toddler { font-size: 11px; }
+
+        .stay-box {
+            background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px;
+            padding: 10px 12px; margin-top: 16px;
+        }
+        .stay-box .loc-name { color: #2e7d32; }
+
+        .day-trip-note {
+            background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 8px;
+            padding: 10px 12px; margin-top: 12px;
+        }
+        .day-trip-note .loc-name { color: #6b21a8; }
+
+        .legend-footer {
+            margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;
+            font-size: 11px; color: #999; text-align: center;
+        }
+
+        .custom-marker { background: transparent !important; border: none !important; }
+
+        .walk-label {
+            background: rgba(80,80,80,0.85) !important; color: #fff !important;
+            padding: 2px 6px !important; border-radius: 4px !important;
+            font-size: 10px !important; font-weight: 600 !important;
+            white-space: nowrap !important; border: none !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-content { margin: 12px 14px; font-size: 13px; }
+        .popup-title { font-weight: 700; font-size: 15px; color: #1a365d; margin-bottom: 6px; }
+        .popup-desc { color: #555; margin-bottom: 6px; }
+        .popup-meta { color: #888; font-size: 12px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div class="title-bar">
+            <h1>🇮🇹 Florence Travel Guide</h1>
+            <p>Renaissance Art, Family Fun & Gelato · Jun 18–21</p>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <div class="sidebar" id="sidebar"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    const COLORS = {
+        transport: '#dc2626',
+        attraction: '#2563eb',
+        food: '#ea580c',
+        gem: '#7c3aed',
+        stay: '#16a34a'
+    };
+
+    const locations = [
+        // Transport
+        { n:1, cat:'transport', name:'Firenze Santa Maria Novella', lat:43.7764, lng:11.2486,
+          desc:'Main train station — your arrival point', cost:'N/A', toddler:'🟢',
+          walk:'Central hub' },
+
+        // Core Attractions — slightly offset coords for dense cluster near centro
+        { n:2, cat:'attraction', name:'Duomo / Cathedral', lat:43.7731, lng:11.2560,
+          desc:'Iconic Renaissance cathedral with stunning dome', cost:'Free-€25', toddler:'🟡',
+          walk:'10 min from SMN station' },
+        { n:3, cat:'attraction', name:'Ponte Vecchio', lat:43.7680, lng:11.2531,
+          desc:'Medieval bridge lined with jewelry shops', cost:'Free', toddler:'🟢',
+          walk:'8 min from Duomo' },
+        { n:4, cat:'attraction', name:'Boboli Gardens', lat:43.7650, lng:11.2520,
+          desc:'Renaissance gardens behind Pitti Palace', cost:'€10', toddler:'🟢',
+          walk:'5 min from Ponte Vecchio' },
+        { n:5, cat:'attraction', name:'Piazzale Michelangelo', lat:43.7629, lng:11.2650,
+          desc:'Best sunset views over Florence — must-see!', cost:'Free', toddler:'🟢',
+          walk:'20 min uphill from centre' },
+        { n:6, cat:'attraction', name:'Uffizi Gallery', lat:43.7685, lng:11.2545,
+          desc:'World\'s greatest Renaissance art collection', cost:'€20', toddler:'🔴',
+          walk:'2 min from Ponte Vecchio' },
+        { n:7, cat:'attraction', name:'Basilica Santa Maria Novella', lat:43.7748, lng:11.2493,
+          desc:'Beautiful facade, perfect introduction to Florence', cost:'€7.50', toddler:'🟡',
+          walk:'2 min from SMN station' },
+
+        // Food & Neighbourhoods
+        { n:8, cat:'food', name:'Oltrarno / Santo Spirito', lat:43.7660, lng:11.2450,
+          desc:'Artisan quarter — leather shops, local atmosphere', cost:'€-€€', toddler:'🟢',
+          walk:'10 min from Ponte Vecchio' },
+        { n:9, cat:'food', name:'Gelato crawl area', lat:43.7720, lng:11.2545,
+          desc:'Best gelaterias cluster near Duomo', cost:'€3-5', toddler:'🟢',
+          walk:'Centre of everything' },
+        { n:10, cat:'food', name:'Trattorias in Santo Spirito', lat:43.7653, lng:11.2430,
+          desc:'"Hidden local gems" — Reddit recommendations', cost:'€€', toddler:'🟢',
+          walk:'Evening spot' },
+
+        // Hidden Gems — offset Palazzo Vecchio slightly from Uffizi cluster
+        { n:11, cat:'gem', name:'Palazzo Vecchio / Piazza della Signoria', lat:43.7692, lng:11.2555,
+          desc:'Imposing town hall in spectacular square', cost:'Free exterior', toddler:'🟢',
+          walk:'1 min from Uffizi' },
+        { n:12, cat:'gem', name:'Street art San Frediano', lat:43.7655, lng:11.2390,
+          desc:'Hidden street art scene in trendy neighbourhood', cost:'Free', toddler:'🟢',
+          walk:'15 min from centre' },
+    ];
+
+    // Build sidebar
+    const sb = document.getElementById('sidebar');
+    let html = '<h2>📍 Location Key</h2>';
+
+    const cats = [
+        { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
+        { id:'food', label:'🍦 Food & Neighbourhoods', color: COLORS.food },
+        { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+    ];
+
+    cats.forEach(c => {
+        html += `<div class="cat-label"><span class="cat-dot" style="background:${c.color}"></span>${c.label}</div>`;
+        locations.filter(l => l.cat === c.id).forEach(l => {
+            html += `<div class="loc" onclick="flyTo(${l.lat},${l.lng},${l.n})">
+                <div class="num" style="background:${c.color}">${l.n}</div>
+                <div class="loc-info">
+                    <div class="loc-name">${l.name}</div>
+                    <div class="loc-desc">${l.desc}</div>
+                    <div class="loc-toddler">${l.toddler} ${l.cost} · ${l.walk}</div>
+                </div>
+            </div>`;
+        });
+    });
+
+    // Stay area box
+    html += `<div class="stay-box">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
+        <div class="loc-info">
+            <div class="loc-name">Between SMN Station & Duomo</div>
+            <div class="loc-desc">Central Florence location. Walking distance to everything major. Historic centre with easy train access. ~€120/night for 1-bed apartment.</div>
+        </div>
+    </div>`;
+
+    // Day trip note
+    html += `<div class="day-trip-note">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>🚂 Day Trip</div>
+        <div class="loc-info">
+            <div class="loc-name">Fiesole & Settignano Hill Villages</div>
+            <div class="loc-desc">Ancient Etruscan town with panoramic views over Florence valley. 25 min by bus #7. Roman theatre ruins. 🟢 Family-friendly with great photo ops.</div>
+        </div>
+    </div>`;
+
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Click markers or sidebar items for details</div>`;
+    sb.innerHTML = html;
+
+    // Initialize map — focused on central Florence, NOT including Fiesole
+    const map = L.map('map', {
+        center: [43.7700, 11.2550],
+        zoom: 14,
+        zoomControl: true,
+        maxZoom: 18,
+        minZoom: 12
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+
+    // Stay area polygon — between SMN station and Ponte Vecchio / Duomo area
+    L.polygon([
+        [43.7780, 11.2470], [43.7780, 11.2580],
+        [43.7650, 11.2580], [43.7650, 11.2470]
+    ], {
+        fillColor: COLORS.stay, fillOpacity: 0.12,
+        color: COLORS.stay, weight: 2, opacity: 0.5,
+        dashArray: '6,4'
+    }).addTo(map);
+
+    // Markers
+    const markers = {};
+    locations.forEach(l => {
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+                background:${COLORS[l.cat]}; color:#fff;
+                width:${size}px; height:${size}px; border-radius:50%;
+                border:2.5px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.35);
+                display:flex; align-items:center; justify-content:center;
+                font-weight:700; font-size:${fontSize}px; line-height:1;
+                cursor:pointer;
+            ">${l.n}</div>`,
+            iconSize: [size, size],
+            iconAnchor: [size/2, size/2]
+        });
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        m.bindPopup(`
+            <div class="popup-title">${l.n}. ${l.name}</div>
+            <div class="popup-desc">${l.desc}</div>
+            <div class="popup-meta">
+                💰 ${l.cost} · ${l.toddler} Toddler · 🚶 ${l.walk}
+            </div>
+        `, { maxWidth: 260 });
+        markers[l.n] = m;
+    });
+
+    // Walking time lines
+    const walks = [
+        { from:[43.7764, 11.2486], to:[43.7731, 11.2560], label:'10 min' },   // Station → Duomo
+        { from:[43.7731, 11.2560], to:[43.7680, 11.2531], label:'8 min' },    // Duomo → Ponte Vecchio
+        { from:[43.7680, 11.2531], to:[43.7627, 11.2479], label:'5 min' },    // Ponte Vecchio → Boboli
+    ];
+
+    walks.forEach(w => {
+        L.polyline([w.from, w.to], {
+            color: '#94a3b8', weight: 2.5, opacity: 0.5, dashArray: '6,6'
+        }).addTo(map);
+        const mid = [(w.from[0]+w.to[0])/2, (w.from[1]+w.to[1])/2];
+        L.marker(mid, {
+            icon: L.divIcon({
+                className: 'custom-marker',
+                html: `<div class="walk-label">${w.label}</div>`,
+                iconAnchor: [20, 8]
+            }),
+            interactive: false
+        }).addTo(map);
+    });
+
+    // Fit bounds to all markers (not including Fiesole)
+    const allCoords = locations.map(l => [l.lat, l.lng]);
+    map.fitBounds(L.latLngBounds(allCoords).pad(0.05));
+
+    // Fly to function for sidebar clicks
+    function flyTo(lat, lng, n) {
+        map.flyTo([lat, lng], 16, { duration: 0.8 });
+        setTimeout(() => markers[n].openPopup(), 900);
+    }
+    </script>
+</body>
+</html>
