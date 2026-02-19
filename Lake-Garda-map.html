@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lake Garda / Sirmione Travel Guide</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            height: 100vh;
+        }
+        #map-container {
+            flex: 1;
+            position: relative;
+        }
+        #map { height: 100%; width: 100%; }
+
+        .title-bar {
+            position: absolute; top: 16px; left: 60px; z-index: 1000;
+            background: linear-gradient(135deg, #1a365d, #2563eb);
+            color: #fff; padding: 14px 24px; border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+        }
+        .title-bar h1 { font-size: 22px; font-weight: 700; }
+        .title-bar p { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+
+        .sidebar {
+            width: 300px; height: 100vh; overflow-y: auto;
+            background: #fff; border-left: 1px solid #e0e0e0;
+            padding: 20px 16px; flex-shrink: 0;
+        }
+        .sidebar h2 {
+            font-size: 15px; font-weight: 700; color: #1a365d;
+            border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 16px;
+        }
+        .cat-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #555; margin: 18px 0 8px 0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .cat-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .loc {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 5px 0; border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .loc:hover { background: #f8f9ff; }
+        .num {
+            width: 26px; height: 26px; border-radius: 50%;
+            color: #fff; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+        }
+        .loc-info { flex: 1; min-width: 0; }
+        .loc-name { font-size: 13px; font-weight: 600; color: #222; }
+        .loc-desc { font-size: 11px; color: #888; line-height: 1.3; }
+        .loc-toddler { font-size: 11px; }
+
+        .stay-box {
+            background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px;
+            padding: 10px 12px; margin-top: 16px;
+        }
+        .stay-box .loc-name { color: #2e7d32; }
+
+        .day-trip-note {
+            background: #f3e8ff; border: 1px solid #d8b4fe; border-radius: 8px;
+            padding: 10px 12px; margin-top: 12px;
+        }
+        .day-trip-note .loc-name { color: #6b21a8; }
+
+        .legend-footer {
+            margin-top: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;
+            font-size: 11px; color: #999; text-align: center;
+        }
+
+        .custom-marker { background: transparent !important; border: none !important; }
+
+        .walk-label {
+            background: rgba(80,80,80,0.85) !important; color: #fff !important;
+            padding: 2px 6px !important; border-radius: 4px !important;
+            font-size: 10px !important; font-weight: 600 !important;
+            white-space: nowrap !important; border: none !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-content { margin: 12px 14px; font-size: 13px; }
+        .popup-title { font-weight: 700; font-size: 15px; color: #1a365d; margin-bottom: 6px; }
+        .popup-desc { color: #555; margin-bottom: 6px; }
+        .popup-meta { color: #888; font-size: 12px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div class="title-bar">
+            <h1>🇮🇹 Lake Garda / Sirmione Travel Guide</h1>
+            <p>Lakeside relaxation & medieval charm · Jun 13–15</p>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <div class="sidebar" id="sidebar"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    const COLORS = {
+        transport: '#dc2626',
+        attraction: '#2563eb',
+        food: '#ea580c',
+        gem: '#7c3aed',
+        beach: '#0891b2',
+        stay: '#16a34a'
+    };
+
+    const locations = [
+        // Transport
+        { n:1, cat:'transport', name:'Desenzano del Garda Station', lat:45.4637, lng:10.5468,
+          desc:'Main train station — arrival/departure point', cost:'N/A', toddler:'🟢',
+          walk:'15 min bus to Sirmione' },
+
+        // Core Attractions
+        { n:2, cat:'attraction', name:'Scaligero Castle', lat:45.4929, lng:10.6068,
+          desc:'13th-century lakeside castle with drawbridge & tower', cost:'€6', toddler:'🟢',
+          walk:'Entrance to old town' },
+        { n:3, cat:'attraction', name:'Grotte di Catullo', lat:45.5015, lng:10.6065,
+          desc:'Roman villa ruins with olive groves & lake views', cost:'€8', toddler:'🟢',
+          walk:'20 min from castle' },
+        { n:4, cat:'attraction', name:'Sirmione Old Town', lat:45.4960, lng:10.6075,
+          desc:'Car-free streets, gelato shops, lake views both sides', cost:'Free', toddler:'🟢',
+          walk:'Start at castle' },
+
+        // Beaches
+        { n:5, cat:'beach', name:'Jamaica Beach', lat:45.5005, lng:10.6040,
+          desc:'Crystal-clear water over flat rocks — stunning', cost:'Free', toddler:'🟢',
+          walk:'Tip of peninsula' },
+        { n:6, cat:'beach', name:'Lido delle Bionde', lat:45.4975, lng:10.6105,
+          desc:'Managed beach with sunbeds & facilities', cost:'€5–10', toddler:'🟢',
+          walk:'10 min from castle' },
+        { n:7, cat:'beach', name:'Free Thermal Springs', lat:45.5010, lng:10.6050,
+          desc:'Natural hot sulphur springs flowing into the lake', cost:'Free', toddler:'🟢',
+          walk:'Near Jamaica Beach' },
+
+        // Hidden Gems
+        { n:8, cat:'gem', name:'Lazise (Nearby Village)', lat:45.5040, lng:10.7340,
+          desc:'Quieter walled village with harbour — 30 min ferry', cost:'€5–8 ferry', toddler:'🟢',
+          walk:'Ferry from Sirmione' },
+        { n:9, cat:'gem', name:'Desenzano Harbour & Market', lat:45.4615, lng:10.5395,
+          desc:'Lively harbour, Tuesday market, local restaurants', cost:'Free', toddler:'🟢',
+          walk:'Near station' },
+
+        // Food
+        { n:10, cat:'food', name:'Risorgimento Restaurant', lat:45.4945, lng:10.6060,
+          desc:'Lakeside terrace dining — sunset views', cost:'€€', toddler:'🟢',
+          walk:'Old town waterfront' },
+        { n:11, cat:'food', name:'Gelateria Sirmione', lat:45.4935, lng:10.6072,
+          desc:'Best gelato in town — pistachio is legendary', cost:'€', toddler:'🟢',
+          walk:'Near castle' },
+    ];
+
+    // Build sidebar
+    const sb = document.getElementById('sidebar');
+    let html = '<h2>📍 Location Key</h2>';
+
+    const cats = [
+        { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'attraction', label:'🏛️ Attractions', color: COLORS.attraction },
+        { id:'beach', label:'🏖️ Beaches & Water', color: COLORS.beach },
+        { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+        { id:'food', label:'🍝 Food', color: COLORS.food },
+    ];
+
+    cats.forEach(c => {
+        html += `<div class="cat-label"><span class="cat-dot" style="background:${c.color}"></span>${c.label}</div>`;
+        locations.filter(l => l.cat === c.id).forEach(l => {
+            html += `<div class="loc" onclick="flyTo(${l.lat},${l.lng},${l.n})">
+                <div class="num" style="background:${c.color}">${l.n}</div>
+                <div class="loc-info">
+                    <div class="loc-name">${l.name}</div>
+                    <div class="loc-desc">${l.desc}</div>
+                    <div class="loc-toddler">${l.toddler} ${l.cost} · ${l.walk}</div>
+                </div>
+            </div>`;
+        });
+    });
+
+    // Stay area boxes
+    html += `<div class="stay-box">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Areas</div>
+        <div class="loc-info">
+            <div class="loc-name">Sirmione Old Town</div>
+            <div class="loc-desc">Car-free peninsula, walk to everything. ~€120/night for 1-bed apartment.</div>
+            <br>
+            <div class="loc-name">Sirmione Colombare</div>
+            <div class="loc-desc">Just outside old town, quieter, more space. ~€100/night.</div>
+        </div>
+    </div>`;
+
+    // Day trip note
+    html += `<div class="day-trip-note">
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>🚂 Day Trip Option</div>
+        <div class="loc-info">
+            <div class="loc-name">Verona</div>
+            <div class="loc-desc">20 min train from Desenzano. See the Roman Arena, Piazza delle Erbe, and gelato. Half-day is enough.</div>
+        </div>
+    </div>`;
+
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Click markers or sidebar items for details</div>`;
+    sb.innerHTML = html;
+
+    // Initialize map — show both Sirmione and Desenzano
+    const map = L.map('map', {
+        center: [45.4850, 10.5800],
+        zoom: 13,
+        zoomControl: true,
+        maxZoom: 18,
+        minZoom: 11
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/">CARTO</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
+
+    // Stay area polygon (Sirmione old town)
+    L.polygon([
+        [45.5020, 10.6020], [45.5020, 10.6120],
+        [45.4910, 10.6120], [45.4910, 10.6020]
+    ], {
+        fillColor: COLORS.stay, fillOpacity: 0.12,
+        color: COLORS.stay, weight: 2, opacity: 0.5,
+        dashArray: '6,4'
+    }).addTo(map);
+
+    // Markers
+    const markers = {};
+    locations.forEach(l => {
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+                background:${COLORS[l.cat]}; color:#fff;
+                width:${size}px; height:${size}px; border-radius:50%;
+                border:2.5px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.35);
+                display:flex; align-items:center; justify-content:center;
+                font-weight:700; font-size:${fontSize}px; line-height:1;
+                cursor:pointer;
+            ">${l.n}</div>`,
+            iconSize: [size, size],
+            iconAnchor: [size/2, size/2]
+        });
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        m.bindPopup(`
+            <div class="popup-title">${l.n}. ${l.name}</div>
+            <div class="popup-desc">${l.desc}</div>
+            <div class="popup-meta">
+                💰 ${l.cost} · ${l.toddler} Toddler · 🚶 ${l.walk}
+            </div>
+        `, { maxWidth: 260 });
+        markers[l.n] = m;
+    });
+
+    // Walking time lines
+    const walks = [
+        { from:[45.4637,10.5468], to:[45.4929,10.6068], label:'15 min bus' },  // Station → Castle
+        { from:[45.4929,10.6068], to:[45.4960,10.6075], label:'2 min' },       // Castle → Old Town
+        { from:[45.4960,10.6075], to:[45.5015,10.6065], label:'15 min' },      // Old Town → Grotte
+        { from:[45.5015,10.6065], to:[45.5005,10.6040], label:'3 min' },       // Grotte → Jamaica Beach
+        { from:[45.4929,10.6068], to:[45.4975,10.6105], label:'10 min' },      // Castle → Lido
+    ];
+
+    walks.forEach(w => {
+        L.polyline([w.from, w.to], {
+            color: '#94a3b8', weight: 2.5, opacity: 0.5, dashArray: '6,6'
+        }).addTo(map);
+        const mid = [(w.from[0]+w.to[0])/2, (w.from[1]+w.to[1])/2];
+        L.marker(mid, {
+            icon: L.divIcon({
+                className: 'custom-marker',
+                html: `<div class="walk-label">${w.label}</div>`,
+                iconAnchor: [20, 8]
+            }),
+            interactive: false
+        }).addTo(map);
+    });
+
+    // Fit bounds to main area (exclude Lazise for initial view)
+    const mainCoords = locations.filter(l => l.n !== 8).map(l => [l.lat, l.lng]);
+    map.fitBounds(L.latLngBounds(mainCoords).pad(0.1));
+
+    // Fly to function for sidebar clicks
+    function flyTo(lat, lng, n) {
+        map.flyTo([lat, lng], 16, { duration: 0.8 });
+        setTimeout(() => markers[n].openPopup(), 900);
+    }
+    </script>
+</body>
+</html>
