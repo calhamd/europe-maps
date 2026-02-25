@@ -128,42 +128,47 @@
           desc:'Main train station — your arrival point', cost:'N/A', toddler:'🟢',
           walk:'Central hub' },
 
+        // Booked Accommodation
+        { n:2, cat:'stay', name:'Over the Roofs of Florence ✅', lat:43.7718, lng:11.2510,
+          desc:'BOOKED — 65m² apartment with terrace, Tornabuoni area', cost:'Booked', toddler:'🟢',
+          walk:'Near Palazzo Strozzi' },
+
         // Core Attractions — slightly offset coords for dense cluster near centro
-        { n:2, cat:'attraction', name:'Duomo / Cathedral', lat:43.7731, lng:11.2560,
+        { n:3, cat:'attraction', name:'Duomo / Cathedral', lat:43.7731, lng:11.2560,
           desc:'Iconic Renaissance cathedral with stunning dome', cost:'Free-€25', toddler:'🟡',
           walk:'10 min from SMN station' },
-        { n:3, cat:'attraction', name:'Ponte Vecchio', lat:43.7680, lng:11.2531,
+        { n:4, cat:'attraction', name:'Ponte Vecchio', lat:43.7680, lng:11.2531,
           desc:'Medieval bridge lined with jewelry shops', cost:'Free', toddler:'🟢',
           walk:'8 min from Duomo' },
-        { n:4, cat:'attraction', name:'Boboli Gardens', lat:43.7650, lng:11.2520,
+        { n:5, cat:'attraction', name:'Boboli Gardens', lat:43.7650, lng:11.2520,
           desc:'Renaissance gardens behind Pitti Palace', cost:'€10', toddler:'🟢',
           walk:'5 min from Ponte Vecchio' },
-        { n:5, cat:'attraction', name:'Piazzale Michelangelo', lat:43.7629, lng:11.2650,
+        { n:6, cat:'attraction', name:'Piazzale Michelangelo', lat:43.7629, lng:11.2650,
           desc:'Best sunset views over Florence — must-see!', cost:'Free', toddler:'🟢',
           walk:'20 min uphill from centre' },
-        { n:6, cat:'attraction', name:'Uffizi Gallery', lat:43.7685, lng:11.2545,
+        { n:7, cat:'attraction', name:'Uffizi Gallery', lat:43.7685, lng:11.2545,
           desc:'World\'s greatest Renaissance art collection', cost:'€20', toddler:'🔴',
           walk:'2 min from Ponte Vecchio' },
-        { n:7, cat:'attraction', name:'Basilica Santa Maria Novella', lat:43.7748, lng:11.2493,
+        { n:8, cat:'attraction', name:'Basilica Santa Maria Novella', lat:43.7748, lng:11.2493,
           desc:'Beautiful facade, perfect introduction to Florence', cost:'€7.50', toddler:'🟡',
           walk:'2 min from SMN station' },
 
         // Food & Neighbourhoods
-        { n:8, cat:'food', name:'Oltrarno / Santo Spirito', lat:43.7660, lng:11.2450,
+        { n:9, cat:'food', name:'Oltrarno / Santo Spirito', lat:43.7660, lng:11.2450,
           desc:'Artisan quarter — leather shops, local atmosphere', cost:'€-€€', toddler:'🟢',
           walk:'10 min from Ponte Vecchio' },
-        { n:9, cat:'food', name:'Gelato crawl area', lat:43.7720, lng:11.2545,
+        { n:10, cat:'food', name:'Gelato crawl area', lat:43.7720, lng:11.2545,
           desc:'Best gelaterias cluster near Duomo', cost:'€3-5', toddler:'🟢',
           walk:'Centre of everything' },
-        { n:10, cat:'food', name:'Trattorias in Santo Spirito', lat:43.7653, lng:11.2430,
+        { n:11, cat:'food', name:'Trattorias in Santo Spirito', lat:43.7653, lng:11.2430,
           desc:'"Hidden local gems" — Reddit recommendations', cost:'€€', toddler:'🟢',
           walk:'Evening spot' },
 
         // Hidden Gems — offset Palazzo Vecchio slightly from Uffizi cluster
-        { n:11, cat:'gem', name:'Palazzo Vecchio / Piazza della Signoria', lat:43.7692, lng:11.2555,
+        { n:12, cat:'gem', name:'Palazzo Vecchio / Piazza della Signoria', lat:43.7692, lng:11.2555,
           desc:'Imposing town hall in spectacular square', cost:'Free exterior', toddler:'🟢',
           walk:'1 min from Uffizi' },
-        { n:12, cat:'gem', name:'Street art San Frediano', lat:43.7655, lng:11.2390,
+        { n:13, cat:'gem', name:'Street art San Frediano', lat:43.7655, lng:11.2390,
           desc:'Hidden street art scene in trendy neighbourhood', cost:'Free', toddler:'🟢',
           walk:'15 min from centre' },
     ];
@@ -174,6 +179,7 @@
 
     const cats = [
         { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'stay', label:'🏨 Booked Accommodation', color: COLORS.stay },
         { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
         { id:'food', label:'🍦 Food & Neighbourhoods', color: COLORS.food },
         { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
@@ -195,10 +201,10 @@
 
     // Stay area box
     html += `<div class="stay-box">
-        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Accommodation</div>
         <div class="loc-info">
-            <div class="loc-name">Between SMN Station & Duomo</div>
-            <div class="loc-desc">Central Florence location. Walking distance to everything major. Historic centre with easy train access. ~€120/night for 1-bed apartment.</div>
+            <div class="loc-name">Over the Roofs of Florence ✅ BOOKED</div>
+            <div class="loc-desc">65m² apartment with terrace, Tornabuoni/Duomo/Repubblica area. Rated 9.6/10. Booking.com ref 6527723816. Jun 18–21, 3 nights.</div>
         </div>
     </div>`;
 
