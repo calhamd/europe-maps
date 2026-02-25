@@ -151,22 +151,27 @@
           desc:'Sandy beach island — perfect for toddler play!', cost:'€7.50 boat', toddler:'🟢',
           walk:'20 min by vaporetto', pram:'Beach wheels struggle, but worth it!' },
 
+        // Booked Accommodation
+        { n:9, cat:'stay', name:'S&L Apartment Dorsoduro ✅', lat:45.4330, lng:12.3270,
+          desc:'BOOKED — Canal view apartment, hosted by Luca', cost:'$1,165 AUD/3 nights', toddler:'🟢',
+          walk:'Dorsoduro', pram:'Must climb stairs' },
+
         // Neighbourhoods & Food
-        { n:9, cat:'food', name:'Dorsoduro District', lat:45.4310, lng:12.3280,
+        { n:10, cat:'food', name:'Dorsoduro District', lat:45.4310, lng:12.3280,
           desc:'Artsy neighbourhood with canal-side restaurants', cost:'€€', toddler:'🟢',
           walk:'15 min from station', pram:'Mix of bridges — carrier helpful' },
-        { n:10, cat:'food', name:'Cannaregio / Bacari Wine Bars', lat:45.4440, lng:12.3310,
+        { n:11, cat:'food', name:'Cannaregio / Bacari Wine Bars', lat:45.4440, lng:12.3310,
           desc:'Local drinking culture — cicchetti (small plates)', cost:'€€', toddler:'🟡',
           walk:'10 min from station', pram:'Narrow streets, some steps' },
-        { n:11, cat:'food', name:'Orto dei Carmini Hidden Garden', lat:45.4320, lng:12.3240,
+        { n:12, cat:'food', name:'Orto dei Carmini Hidden Garden', lat:45.4320, lng:12.3240,
           desc:'Secret garden oasis away from crowds', cost:'Free', toddler:'🟢',
           walk:'20 min from St Mark\'s', pram:'Peaceful spot, pram-accessible' },
 
         // Hidden Gems
-        { n:12, cat:'gem', name:'Basilica dei Frari', lat:45.4367, lng:12.3264,
+        { n:13, cat:'gem', name:'Basilica dei Frari', lat:45.4367, lng:12.3264,
           desc:'Massive Gothic church with Titian masterpieces', cost:'€3', toddler:'🟡',
           walk:'15 min from Rialto', pram:'Some steps, but manageable' },
-        { n:13, cat:'gem', name:'Peggy Guggenheim Collection', lat:45.4309, lng:12.3319,
+        { n:14, cat:'gem', name:'Peggy Guggenheim Collection', lat:45.4309, lng:12.3319,
           desc:'Modern art in a Grand Canal palace', cost:'€18', toddler:'🟡',
           walk:'10 min from St Mark\'s', pram:'Museum accessible, garden lovely' },
     ];
@@ -177,6 +182,7 @@
 
     const cats = [
         { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'stay', label:'🏨 Booked Accommodation', color: COLORS.stay },
         { id:'attraction', label:'🏛️ Attractions & Islands', color: COLORS.attraction },
         { id:'food', label:'🍝 Neighbourhoods & Food', color: COLORS.food },
         { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
@@ -198,10 +204,10 @@
 
     // Stay area box
     html += `<div class="stay-box">
-        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Accommodation</div>
         <div class="loc-info">
-            <div class="loc-name">Dorsoduro / Near Santa Lucia</div>
-            <div class="loc-desc">Balance of convenience and local atmosphere. Walking distance to station + attractions. ~€180/night for canal-view apartment.</div>
+            <div class="loc-name">S&L Apartment Dorsoduro ✅ BOOKED</div>
+            <div class="loc-desc">Canal view apartment hosted by Luca. $1,165.41 AUD / 3 nights. Check-in Jun 15 after 3 PM. Free cancellation before Jun 10.</div>
         </div>
     </div>`;
 
