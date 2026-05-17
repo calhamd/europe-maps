@@ -119,7 +119,8 @@
         attraction: '#2563eb',
         food: '#ea580c',
         gem: '#7c3aed',
-        stay: '#16a34a'
+        stay: '#16a34a',
+        practical: '#6b7280'
     };
 
     const locations = [
@@ -177,6 +178,17 @@
         { n:15, cat:'gem', name:'Peggy Guggenheim Collection', lat:45.4309, lng:12.3319,
           desc:'Modern art in a Grand Canal palace', cost:'€18', toddler:'🔴',
           walk:'10 min from stay', pram:'Museum accessible, but not very toddler-friendly' },
+
+        // Practical / convenience
+        { n:16, cat:'practical', name:'Piazzale Roma practical hub', lat:45.4387, lng:12.3195,
+          desc:'Useful arrival/departure edge for bags, buses, taxis and easier bridge-light logistics', cost:'N/A', toddler:'🟢',
+          walk:'Gateway into Venice', pram:'Much easier than deep-island hauling' },
+        { n:17, cat:'practical', name:'Conad / essentials stop', lat:45.4402, lng:12.3257,
+          desc:'Handy groceries / basics stop near the station side before heading deeper in', cost:'€', toddler:'🟢',
+          walk:'6 min from station', pram:'Flat approach by Venice standards' },
+        { n:18, cat:'practical', name:'ACTV vaporetto node', lat:45.4338, lng:12.3278,
+          desc:'Useful water-bus anchor near the Dorsoduro side for island days and lower-effort movement', cost:'€', toddler:'🟢',
+          walk:'4 min from stay', pram:'Check bridge route first' },
     ];
 
     // Build sidebar
@@ -189,6 +201,7 @@
         { id:'attraction', label:'🏛️ Attractions & Islands', color: COLORS.attraction },
         { id:'food', label:'🍝 Neighbourhoods & Food', color: COLORS.food },
         { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+        { id:'practical', label:'🧺 Practical Pins', color: COLORS.practical },
     ];
 
     cats.forEach(c => {
@@ -223,7 +236,7 @@
         </div>
     </div>`;
 
-    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>⚠️ Venice bridges are tough with prams — baby carrier recommended!<br>Click markers or sidebar items for details</div>`;
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>⚠️ Venice bridges are tough with prams — baby carrier recommended!<br>Use the layer control to turn categories on/off</div>`;
     sb.innerHTML = html;
 
     // Initialize map — focused on central Venice, with wider zoom to show islands
@@ -252,11 +265,14 @@
         dashArray: '6,4'
     }).addTo(map);
 
-    // Markers
+    // Markers by category with toggle layers
     const markers = {};
+    const layerGroups = {};
+    cats.forEach(c => { layerGroups[c.id] = L.layerGroup().addTo(map); });
+
     locations.forEach(l => {
-        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
-        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' || l.cat === 'practical' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' || l.cat === 'practical' ? 11 : 12);
         const icon = L.divIcon({
             className: 'custom-marker',
             html: `<div style="
@@ -270,7 +286,7 @@
             iconSize: [size, size],
             iconAnchor: [size/2, size/2]
         });
-        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 });
         m.bindPopup(`
             <div class="popup-title">${l.n}. ${l.name}</div>
             <div class="popup-desc">${l.desc}</div>
@@ -279,8 +295,18 @@
                 👶 ${l.pram}
             </div>
         `, { maxWidth: 280 });
+        m.addTo(layerGroups[l.cat]);
         markers[l.n] = m;
     });
+
+    L.control.layers(null, {
+        '🚂 Transport': layerGroups.transport,
+        '🏨 Accommodation': layerGroups.stay,
+        '🏛️ Attractions & Islands': layerGroups.attraction,
+        '🍝 Food & neighbourhoods': layerGroups.food,
+        '💎 Hidden gems': layerGroups.gem,
+        '🧺 Practical pins': layerGroups.practical,
+    }, { collapsed: false }).addTo(map);
 
     // Walking time lines (key connections in Venice)
     const walks = [
@@ -304,13 +330,16 @@
     });
 
     // Fit bounds to show most locations (excluding Burano to keep center reasonable)
-    const mainCoords = locations.filter(l => l.n !== 7).map(l => [l.lat, l.lng]); // Exclude Burano
+    const mainCoords = locations.filter(l => l.n !== 7).map(l => [l.lat, l.lng]);
     map.fitBounds(L.latLngBounds(mainCoords).pad(0.08));
 
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
-        // Special handling for distant Burano - zoom out more
+        const loc = locations.find(l => l.n === n);
         const zoomLevel = n === 7 ? 11 : (n === 6 || n === 8 ? 12 : 15);
+        if (loc && layerGroups[loc.cat] && !map.hasLayer(layerGroups[loc.cat])) {
+            map.addLayer(layerGroups[loc.cat]);
+        }
         map.flyTo([lat, lng], zoomLevel, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }

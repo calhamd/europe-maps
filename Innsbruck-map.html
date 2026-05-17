@@ -119,7 +119,9 @@
         attraction: '#2563eb',
         family: '#ea580c',
         gem: '#7c3aed',
-        stay: '#16a34a'
+        stay: '#16a34a',
+        daytrip: '#0f766e',
+        practical: '#6b7280'
     };
 
     const locations = [
@@ -165,6 +167,22 @@
         { n:11, cat:'gem', name:'Swarovski Crystal Worlds', lat:47.2945, lng:11.5898,
           desc:'Quirky indoor/outdoor crystal attraction in Wattens', cost:'€22', toddler:'🟢',
           walk:'20 min by bus/car' },
+
+        // Day trips
+        { n:12, cat:'daytrip', name:'Stams Monastery', lat:47.2762, lng:10.9825,
+          desc:'Quieter monastery outing west of Innsbruck if you want one extra half-day move', cost:'€6', toddler:'🟡',
+          walk:'~30 min by train' },
+
+        // Practical / convenience
+        { n:13, cat:'practical', name:'SPAR / old town groceries', lat:47.2671, lng:11.3923,
+          desc:'Handy groceries / snacks stop close to the apartment zone', cost:'€', toddler:'🟢',
+          walk:'3 min from stay' },
+        { n:14, cat:'practical', name:'Markthalle Innsbruck', lat:47.2665, lng:11.3906,
+          desc:'Covered market for easy snack/lunch backup near the centre', cost:'€-€€', toddler:'🟢',
+          walk:'5 min from stay' },
+        { n:15, cat:'practical', name:'Rapoldipark', lat:47.2634, lng:11.4090,
+          desc:'Useful bigger park/play break option if Laurie needs a reset', cost:'Free', toddler:'🟢',
+          walk:'15 min from old town' },
     ];
 
     // Build sidebar
@@ -177,6 +195,8 @@
         { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
         { id:'family', label:'🎯 Family & Nature', color: COLORS.family },
         { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+        { id:'daytrip', label:'🚂 Day Trips', color: COLORS.daytrip },
+        { id:'practical', label:'🧺 Practical Pins', color: COLORS.practical },
     ];
 
     cats.forEach(c => {
@@ -204,14 +224,14 @@
 
     // Day trip note
     html += `<div class="day-trip-note">
-        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>✨ Optional Extra</div>
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.daytrip}"></span>✨ Optional Extra</div>
         <div class="loc-info">
-            <div class="loc-name">Swarovski Crystal Worlds</div>
-            <div class="loc-desc">Now pinned on the map too — quirky, sparkly, and a decent rainy-day family option in Wattens.</div>
+            <div class="loc-name">Stams Monastery + practical pins added</div>
+            <div class="loc-desc">The map now includes the quieter monastery extra plus a few convenience pins so the city map is more useful on the ground.</div>
         </div>
     </div>`;
 
-    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Click markers or sidebar items for details</div>`;
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Use the layer control to turn categories on/off</div>`;
     sb.innerHTML = html;
 
     // Initialize map — focused on compact Innsbruck center
@@ -240,11 +260,14 @@
         dashArray: '6,4'
     }).addTo(map);
 
-    // Markers
+    // Markers by category with toggle layers
     const markers = {};
+    const layerGroups = {};
+    cats.forEach(c => { layerGroups[c.id] = L.layerGroup().addTo(map); });
+
     locations.forEach(l => {
-        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
-        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' || l.cat === 'practical' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' || l.cat === 'practical' ? 11 : 12);
         const icon = L.divIcon({
             className: 'custom-marker',
             html: `<div style="
@@ -258,7 +281,7 @@
             iconSize: [size, size],
             iconAnchor: [size/2, size/2]
         });
-        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 });
         m.bindPopup(`
             <div class="popup-title">${l.n}. ${l.name}</div>
             <div class="popup-desc">${l.desc}</div>
@@ -266,8 +289,19 @@
                 💰 ${l.cost} · ${l.toddler} Toddler · 🚶 ${l.walk}
             </div>
         `, { maxWidth: 260 });
+        m.addTo(layerGroups[l.cat]);
         markers[l.n] = m;
     });
+
+    L.control.layers(null, {
+        '🚂 Transport': layerGroups.transport,
+        '🏨 Accommodation': layerGroups.stay,
+        '🏛️ Attractions': layerGroups.attraction,
+        '🎯 Family & Nature': layerGroups.family,
+        '💎 Hidden gems': layerGroups.gem,
+        '🚂 Day trips': layerGroups.daytrip,
+        '🧺 Practical pins': layerGroups.practical,
+    }, { collapsed: false }).addTo(map);
 
     // Walking time lines (key connections in compact Innsbruck)
     const walks = [
@@ -291,13 +325,18 @@
         }).addTo(map);
     });
 
-    // Fit bounds to all markers
-    const allCoords = locations.map(l => [l.lat, l.lng]);
-    map.fitBounds(L.latLngBounds(allCoords).pad(0.05));
+    // Fit bounds to local markers by default, not the day trip
+    const defaultCoords = locations.filter(l => l.cat !== 'daytrip').map(l => [l.lat, l.lng]);
+    map.fitBounds(L.latLngBounds(defaultCoords).pad(0.08));
 
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
-        map.flyTo([lat, lng], 16, { duration: 0.8 });
+        const loc = locations.find(l => l.n === n);
+        const zoom = (loc && loc.cat === 'daytrip') ? 10 : ((n === 11) ? 11 : 16);
+        if (loc && layerGroups[loc.cat] && !map.hasLayer(layerGroups[loc.cat])) {
+            map.addLayer(layerGroups[loc.cat]);
+        }
+        map.flyTo([lat, lng], zoom, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }
     </script>

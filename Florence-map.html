@@ -119,7 +119,8 @@
         attraction: '#2563eb',
         food: '#ea580c',
         gem: '#7c3aed',
-        stay: '#16a34a'
+        stay: '#16a34a',
+        practical: '#6b7280'
     };
 
     const locations = [
@@ -174,6 +175,17 @@
         { n:14, cat:'gem', name:'Fiesole', lat:43.8065, lng:11.2938,
           desc:'Hill village with big views — best as a bus side trip', cost:'€1.50 bus', toddler:'🟢',
           walk:'25 min by bus' },
+
+        // Practical / convenience
+        { n:15, cat:'practical', name:'Mercato Centrale', lat:43.7769, lng:11.2532,
+          desc:'Very handy food-market backup near SMN for fast meals and variety', cost:'€-€€', toddler:'🟢',
+          walk:'6 min from stay' },
+        { n:16, cat:'practical', name:'Carrefour / central groceries', lat:43.7728, lng:11.2502,
+          desc:'Useful groceries / basics stop near the accommodation zone', cost:'€', toddler:'🟢',
+          walk:'4 min from stay' },
+        { n:17, cat:'practical', name:'Parco delle Cascine edge / green break option', lat:43.7772, lng:11.2338,
+          desc:'Bigger green reset option if Laurie needs more runaround than the core allows', cost:'Free', toddler:'🟢',
+          walk:'20 min from stay' },
     ];
 
     // Build sidebar
@@ -186,6 +198,7 @@
         { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
         { id:'food', label:'🍦 Food & Neighbourhoods', color: COLORS.food },
         { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+        { id:'practical', label:'🧺 Practical Pins', color: COLORS.practical },
     ];
 
     cats.forEach(c => {
@@ -220,7 +233,7 @@
         </div>
     </div>`;
 
-    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Click markers or sidebar items for details</div>`;
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Use the layer control to turn categories on/off</div>`;
     sb.innerHTML = html;
 
     // Initialize map — focused on central Florence, NOT including Fiesole
@@ -249,11 +262,14 @@
         dashArray: '6,4'
     }).addTo(map);
 
-    // Markers
+    // Markers by category with toggle layers
     const markers = {};
+    const layerGroups = {};
+    cats.forEach(c => { layerGroups[c.id] = L.layerGroup().addTo(map); });
+
     locations.forEach(l => {
-        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
-        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' || l.cat === 'practical' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' || l.cat === 'practical' ? 11 : 12);
         const icon = L.divIcon({
             className: 'custom-marker',
             html: `<div style="
@@ -267,7 +283,7 @@
             iconSize: [size, size],
             iconAnchor: [size/2, size/2]
         });
-        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 });
         m.bindPopup(`
             <div class="popup-title">${l.n}. ${l.name}</div>
             <div class="popup-desc">${l.desc}</div>
@@ -275,8 +291,18 @@
                 💰 ${l.cost} · ${l.toddler} Toddler · 🚶 ${l.walk}
             </div>
         `, { maxWidth: 260 });
+        m.addTo(layerGroups[l.cat]);
         markers[l.n] = m;
     });
+
+    L.control.layers(null, {
+        '🚂 Transport': layerGroups.transport,
+        '🏨 Accommodation': layerGroups.stay,
+        '🏛️ Attractions': layerGroups.attraction,
+        '🍦 Food & neighbourhoods': layerGroups.food,
+        '💎 Hidden gems': layerGroups.gem,
+        '🧺 Practical pins': layerGroups.practical,
+    }, { collapsed: false }).addTo(map);
 
     // Walking time lines
     const walks = [
@@ -306,6 +332,10 @@
 
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
+        const loc = locations.find(l => l.n === n);
+        if (loc && layerGroups[loc.cat] && !map.hasLayer(layerGroups[loc.cat])) {
+            map.addLayer(layerGroups[loc.cat]);
+        }
         map.flyTo([lat, lng], n === 14 ? 13 : 16, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }
