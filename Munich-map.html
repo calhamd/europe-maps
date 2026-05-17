@@ -119,7 +119,9 @@
         attraction: '#2563eb',
         food: '#ea580c',
         gem: '#7c3aed',
-        stay: '#16a34a'
+        stay: '#16a34a',
+        daytrip: '#0f766e',
+        practical: '#6b7280'
     };
 
     const locations = [
@@ -186,6 +188,25 @@
         { n:16, cat:'gem', name:'Frauenkirche', lat:48.1405, lng:11.5695,
           desc:'Cathedral with the devil\'s footprint legend', cost:'Free', toddler:'🟢',
           walk:'2 min from Marienplatz' },
+
+        // Day trips
+        { n:19, cat:'daytrip', name:'Kloster Andechs', lat:47.9748, lng:11.1846,
+          desc:'Monastery brewery outing southwest of Munich — strong Bavaria-flavoured day trip option', cost:'€€', toddler:'🟢',
+          walk:'~45 min by S-Bahn + bus' },
+        { n:20, cat:'daytrip', name:'Neuschwanstein Castle', lat:47.5576, lng:10.7498,
+          desc:'Big iconic castle day trip — beautiful, but a much longer full-day commitment', cost:'€€', toddler:'🟡',
+          walk:'Full day from Munich' },
+
+        // Practical / convenience
+        { n:21, cat:'practical', name:'DM Drogerie Markt', lat:48.1401, lng:11.5624,
+          desc:'Useful central chemist / toiletries stop near the station area', cost:'€', toddler:'🟢',
+          walk:'4 min from Hauptbahnhof' },
+        { n:22, cat:'practical', name:'REWE To Go / supermarket area', lat:48.1411, lng:11.5586,
+          desc:'Convenient grab-and-go groceries around the station for arrival night or train snacks', cost:'€', toddler:'🟢',
+          walk:'At / near Hauptbahnhof' },
+        { n:23, cat:'practical', name:'Alter Botanischer Garten / play break zone', lat:48.1400, lng:11.5658,
+          desc:'Handy green breather near the station and old town transition', cost:'Free', toddler:'🟢',
+          walk:'8 min from stay' },
     ];
 
     // Build sidebar
@@ -198,6 +219,8 @@
         { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
         { id:'food', label:'🍺 Beer Gardens & Food', color: COLORS.food },
         { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
+        { id:'daytrip', label:'🚂 Day Trips', color: COLORS.daytrip },
+        { id:'practical', label:'🧺 Practical Pins', color: COLORS.practical },
     ];
 
     cats.forEach(c => {
@@ -225,14 +248,14 @@
 
     // Day trip note
     html += `<div class="day-trip-note">
-        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>🚂 Day Trip</div>
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.daytrip}"></span>🚂 Day Trips</div>
         <div class="loc-info">
-            <div class="loc-name">Kloster Andechs</div>
-            <div class="loc-desc">Monastery brewery in the mountains. 45 min by S-Bahn + bus. €8 entry. 🟢 Family-friendly beer garden with views.</div>
+            <div class="loc-name">Kloster Andechs + Neuschwanstein now included</div>
+            <div class="loc-desc">Both bigger Munich-side excursions are now represented on the map too, so the map is the union rather than only the compact centre-city layer.</div>
         </div>
     </div>`;
 
-    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Click markers or sidebar items for details</div>`;
+    html += `<div class="legend-footer">🟢 Toddler-great · 🟡 Toddler-ok · 🔴 Skip with toddler<br>Use the layer control to turn categories on/off</div>`;
     sb.innerHTML = html;
 
     // Initialize map — focused on central Munich, NOT including Kloster Andechs
@@ -261,11 +284,14 @@
         dashArray: '6,4'
     }).addTo(map);
 
-    // Markers
+    // Markers by category with toggle layers
     const markers = {};
+    const layerGroups = {};
+    cats.forEach(c => { layerGroups[c.id] = L.layerGroup().addTo(map); });
+
     locations.forEach(l => {
-        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' ? 24 : 28);
-        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' ? 11 : 12);
+        const size = l.cat === 'transport' ? 30 : (l.cat === 'gem' || l.cat === 'practical' ? 24 : 28);
+        const fontSize = l.cat === 'transport' ? 14 : (l.cat === 'gem' || l.cat === 'practical' ? 11 : 12);
         const icon = L.divIcon({
             className: 'custom-marker',
             html: `<div style="
@@ -279,7 +305,7 @@
             iconSize: [size, size],
             iconAnchor: [size/2, size/2]
         });
-        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 }).addTo(map);
+        const m = L.marker([l.lat, l.lng], { icon, zIndexOffset: l.cat === 'attraction' ? 100 : 0 });
         m.bindPopup(`
             <div class="popup-title">${l.n}. ${l.name}</div>
             <div class="popup-desc">${l.desc}</div>
@@ -287,8 +313,19 @@
                 💰 ${l.cost} · ${l.toddler} Toddler · 🚶 ${l.walk}
             </div>
         `, { maxWidth: 260 });
+        m.addTo(layerGroups[l.cat]);
         markers[l.n] = m;
     });
+
+    L.control.layers(null, {
+        '🚂 Transport': layerGroups.transport,
+        '🏨 Accommodation': layerGroups.stay,
+        '🏛️ Attractions': layerGroups.attraction,
+        '🍺 Food': layerGroups.food,
+        '💎 Hidden gems': layerGroups.gem,
+        '🚂 Day trips': layerGroups.daytrip,
+        '🧺 Practical pins': layerGroups.practical,
+    }, { collapsed: false }).addTo(map);
 
     // Walking time lines (only the most useful ones)
     const walks = [
@@ -313,13 +350,18 @@
         }).addTo(map);
     });
 
-    // Fit bounds to all markers (not including Kloster Andechs)
-    const allCoords = locations.map(l => [l.lat, l.lng]);
-    map.fitBounds(L.latLngBounds(allCoords).pad(0.05));
+    // Fit bounds to city markers by default, not the far day trips
+    const defaultCoords = locations.filter(l => l.cat !== 'daytrip').map(l => [l.lat, l.lng]);
+    map.fitBounds(L.latLngBounds(defaultCoords).pad(0.05));
 
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
-        map.flyTo([lat, lng], (n === 11 || n === 12 || n === 15) ? 12 : 16, { duration: 0.8 });
+        const loc = locations.find(l => l.n === n);
+        const zoom = (loc && loc.cat === 'daytrip') ? 10 : ((n === 11 || n === 12 || n === 15) ? 12 : 16);
+        if (loc && layerGroups[loc.cat] && !map.hasLayer(layerGroups[loc.cat])) {
+            map.addLayer(layerGroups[loc.cat]);
+        }
+        map.flyTo([lat, lng], zoom, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }
     </script>
