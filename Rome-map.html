@@ -156,7 +156,7 @@
 
         // Booked Accommodation
         { n:10, cat:'stay', name:'Trastevere Wondersuite ✅', lat:41.8890, lng:12.4690,
-          desc:'BOOKED — Airbnb in heart of Trastevere, Jun 21–28', cost:'Booked', toddler:'🟢',
+          desc:'BOOKED — Airbnb in heart of Trastevere, Jun 21–28. Booking email saved in notes. Checkout time still needs confirming.', cost:'Booked', toddler:'🟢',
           walk:'Trastevere' },
 
         // Neighbourhoods
@@ -186,6 +186,9 @@
         { n:18, cat:'gem', name:'Volpetti Deli', lat:41.8780, lng:12.4820,
           desc:'Legendary deli for authentic Roman ingredients', cost:'€€', toddler:'🟢',
           walk:'Testaccio area' },
+        { n:19, cat:'gem', name:'Villa d’Este, Tivoli', lat:41.9631, lng:12.7988,
+          desc:'Big fountain gardens if you want one Rome side trip', cost:'€11–15', toddler:'🟢',
+          walk:'45–60 min by train/bus' },
     ];
 
     // Build sidebar
@@ -216,10 +219,10 @@
 
     // Stay area box
     html += `<div class="stay-box">
-        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Accommodation</div>
         <div class="loc-info">
-            <div class="loc-name">Centro Storico / Monti</div>
-            <div class="loc-desc">Between Termini and historic center. Walking distance to major attractions. Historic yet family-friendly area.</div>
+            <div class="loc-name">Trastevere Wondersuite Roma ✅ BOOKED</div>
+            <div class="loc-desc">Airbnb in Trastevere for Jun 21–28. Confirmation email is noted in the Rome guide. Great base for evenings, food, and easy walks home. Still worth confirming checkout time for the airport morning, plus any stairs/luggage logistics. No direct Airbnb link saved in notes yet.</div>
         </div>
     </div>`;
 
@@ -228,7 +231,7 @@
         <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>🚂 Day Trip</div>
         <div class="loc-info">
             <div class="loc-name">Villa d'Este, Tivoli</div>
-            <div class="loc-desc">UNESCO Renaissance gardens with stunning fountains. 45 min by train from Termini. €11 entry. 🟢 Beautiful gardens for toddlers.</div>
+            <div class="loc-desc">Now pinned too. Good optional side trip, but probably only if you want a change of pace after the big Rome sights.</div>
         </div>
     </div>`;
 
@@ -292,6 +295,8 @@
 
     // Walking time lines (specified in requirements)
     const walks = [
+        { from:[41.8890,12.4690], to:[41.8883,12.4618], label:'12 min' },  // Trastevere stay ↔ Gianicolo
+        { from:[41.8890,12.4690], to:[41.8990,12.4728], label:'15 min' },  // Trastevere stay ↔ Piazza Navona
         { from:[41.8902,12.4922], to:[41.8925,12.4853], label:'5 min' },   // Colosseum ↔ Forum
         { from:[41.9009,12.4833], to:[41.8986,12.4769], label:'8 min' },   // Trevi ↔ Pantheon
         { from:[41.8986,12.4769], to:[41.8990,12.4728], label:'5 min' },   // Pantheon ↔ Piazza Navona
@@ -312,13 +317,13 @@
         }).addTo(map);
     });
 
-    // Fit bounds to all markers
-    const allCoords = locations.map(l => [l.lat, l.lng]);
+    // Fit bounds to main Rome markers (exclude Tivoli from default view)
+    const allCoords = locations.filter(l => l.n !== 19).map(l => [l.lat, l.lng]);
     map.fitBounds(L.latLngBounds(allCoords).pad(0.05));
 
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
-        map.flyTo([lat, lng], 15, { duration: 0.8 });
+        map.flyTo([lat, lng], n === 19 ? 11 : 15, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }
     </script>

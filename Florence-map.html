@@ -130,7 +130,7 @@
 
         // Booked Accommodation
         { n:2, cat:'stay', name:'Over the Roofs of Florence ✅', lat:43.7718, lng:11.2510,
-          desc:'BOOKED — 65m² apartment with terrace, Tornabuoni area', cost:'Booked', toddler:'🟢',
+          desc:'BOOKED — 65m² apartment with terrace, Tornabuoni area. Booking.com ref 6527723816, PIN 3677. Host +39 338 109 3090.', cost:'Booked', toddler:'🟢',
           walk:'Near Palazzo Strozzi' },
 
         // Core Attractions — slightly offset coords for dense cluster near centro
@@ -155,22 +155,25 @@
 
         // Food & Neighbourhoods
         { n:9, cat:'food', name:'Oltrarno / Santo Spirito', lat:43.7660, lng:11.2450,
-          desc:'Artisan quarter — leather shops, local atmosphere', cost:'€-€€', toddler:'🟢',
+          desc:'Artisan quarter — better for wandering and dinner than the busiest core', cost:'€-€€', toddler:'🟢',
           walk:'10 min from Ponte Vecchio' },
         { n:10, cat:'food', name:'Gelato crawl area', lat:43.7720, lng:11.2545,
-          desc:'Best gelaterias cluster near Duomo', cost:'€3-5', toddler:'🟢',
-          walk:'Centre of everything' },
+          desc:'Central gelato zone near Duomo / Repubblica', cost:'€3-5', toddler:'🟢',
+          walk:'5 min from stay' },
         { n:11, cat:'food', name:'Trattorias in Santo Spirito', lat:43.7653, lng:11.2430,
-          desc:'"Hidden local gems" — Reddit recommendations', cost:'€€', toddler:'🟢',
-          walk:'Evening spot' },
+          desc:'Reliable local dinner pocket from the notes', cost:'€€', toddler:'🟢',
+          walk:'15 min from stay' },
 
         // Hidden Gems — offset Palazzo Vecchio slightly from Uffizi cluster
         { n:12, cat:'gem', name:'Palazzo Vecchio / Piazza della Signoria', lat:43.7692, lng:11.2555,
           desc:'Imposing town hall in spectacular square', cost:'Free exterior', toddler:'🟢',
-          walk:'1 min from Uffizi' },
+          walk:'7 min from stay' },
         { n:13, cat:'gem', name:'Street art San Frediano', lat:43.7655, lng:11.2390,
           desc:'Hidden street art scene in trendy neighbourhood', cost:'Free', toddler:'🟢',
-          walk:'15 min from centre' },
+          walk:'20 min from stay' },
+        { n:14, cat:'gem', name:'Fiesole', lat:43.8065, lng:11.2938,
+          desc:'Hill village with big views — best as a bus side trip', cost:'€1.50 bus', toddler:'🟢',
+          walk:'25 min by bus' },
     ];
 
     // Build sidebar
@@ -204,7 +207,7 @@
         <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Accommodation</div>
         <div class="loc-info">
             <div class="loc-name">Over the Roofs of Florence ✅ BOOKED</div>
-            <div class="loc-desc">65m² apartment with terrace, Tornabuoni/Duomo/Repubblica area. Rated 9.6/10. Booking.com ref 6527723816. Jun 18–21, 3 nights.</div>
+            <div class="loc-desc">Tornabuoni/Duomo/Repubblica area. Booking.com ref 6527723816, PIN 3677. Host contact +39 338 109 3090 for key pickup/check-in. Rated 9.6/10. Good central base between SMN and the historic core. No direct booking link saved yet.</div>
         </div>
     </div>`;
 
@@ -298,12 +301,12 @@
     });
 
     // Fit bounds to all markers (not including Fiesole)
-    const allCoords = locations.map(l => [l.lat, l.lng]);
+    const allCoords = locations.filter(l => l.n !== 14).map(l => [l.lat, l.lng]);
     map.fitBounds(L.latLngBounds(allCoords).pad(0.05));
 
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
-        map.flyTo([lat, lng], 16, { duration: 0.8 });
+        map.flyTo([lat, lng], n === 14 ? 13 : 16, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }
     </script>

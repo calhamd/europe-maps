@@ -153,15 +153,18 @@
 
         // Hidden Gems
         { n:8, cat:'gem', name:'Lazise (Nearby Village)', lat:45.5040, lng:10.7340,
-          desc:'Quieter walled village with harbour — 30 min ferry', cost:'€5–8 ferry', toddler:'🟢',
+          desc:'Quieter walled village with harbour — nice if Sirmione feels too packed', cost:'€5–8 ferry', toddler:'🟢',
           walk:'Ferry from Sirmione' },
         { n:9, cat:'gem', name:'Desenzano Harbour & Market', lat:45.4615, lng:10.5395,
-          desc:'Lively harbour, Tuesday market, local restaurants', cost:'Free', toddler:'🟢',
+          desc:'Useful arrival-town stop for groceries / lunch / decompression', cost:'Free', toddler:'🟢',
           walk:'Near station' },
+        { n:13, cat:'gem', name:'Peschiera del Garda', lat:45.4397, lng:10.6916,
+          desc:'Easy nearby fortified town on the train line', cost:'Free', toddler:'🟢',
+          walk:'15–20 min by train' },
 
         // Accommodation (booked)
         { n:10, cat:'stay', name:'Hotel Corte Regina ✅', lat:45.4938, lng:10.6072,
-          desc:'BOOKED — Via Antiche Mura 11, old town near castle', cost:'Booked', toddler:'🟢',
+          desc:'BOOKED — Via Antiche Mura 11, Sirmione old town. Booking.com ref 6310491737, PIN 3688. Free cancellation until 7 Jun 2026.', cost:'Booked', toddler:'🟢',
           walk:'2 min from castle' },
 
         // Food
@@ -204,11 +207,8 @@
     html += `<div class="stay-box">
         <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Areas</div>
         <div class="loc-info">
-            <div class="loc-name">Sirmione Old Town</div>
-            <div class="loc-desc">Car-free peninsula, walk to everything. ~€120/night for 1-bed apartment.</div>
-            <br>
-            <div class="loc-name">Sirmione Colombare</div>
-            <div class="loc-desc">Just outside old town, quieter, more space. ~€100/night.</div>
+            <div class="loc-name">Hotel Corte Regina ✅</div>
+            <div class="loc-desc">Via Antiche Mura 11, Sirmione old town. Booking.com ref 6310491737, PIN 3688. Free cancellation until 7 Jun 2026. Great location near the castle and easiest part of the peninsula for arrivals. Check-in/out times not yet saved in notes.</div>
         </div>
     </div>`;
 
@@ -217,7 +217,7 @@
         <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>🚂 Day Trip Option</div>
         <div class="loc-info">
             <div class="loc-name">Verona</div>
-            <div class="loc-desc">20 min train from Desenzano. See the Roman Arena, Piazza delle Erbe, and gelato. Half-day is enough.</div>
+            <div class="loc-desc">Still the cleanest side trip if you want one — very easy from Desenzano, and easier than overcommitting around the lake with bags/toddler.</div>
         </div>
     </div>`;
 
@@ -304,12 +304,12 @@
     });
 
     // Fit bounds to main area (exclude Lazise for initial view)
-    const mainCoords = locations.filter(l => l.n !== 8).map(l => [l.lat, l.lng]);
+    const mainCoords = locations.filter(l => l.n !== 8 && l.n !== 13).map(l => [l.lat, l.lng]);
     map.fitBounds(L.latLngBounds(mainCoords).pad(0.1));
 
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
-        map.flyTo([lat, lng], 16, { duration: 0.8 });
+        map.flyTo([lat, lng], (n === 8 || n === 13) ? 11 : 16, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }
     </script>

@@ -153,7 +153,7 @@
 
         // Booked Accommodation
         { n:9, cat:'stay', name:'S&L Apartment Dorsoduro ✅', lat:45.4330, lng:12.3270,
-          desc:'BOOKED — Canal view apartment, hosted by Luca', cost:'$1,165 AUD/3 nights', toddler:'🟢',
+          desc:'BOOKED — Canal view apartment in Dorsoduro, hosted by Luca. Check-in after 3 PM, check-out by 10 AM. Payment scheduled Jun 2.', cost:'$1,165 AUD/3 nights', toddler:'🟢',
           walk:'Dorsoduro', pram:'Must climb stairs' },
 
         // Neighbourhoods & Food
@@ -161,19 +161,22 @@
           desc:'Artsy neighbourhood with canal-side restaurants', cost:'€€', toddler:'🟢',
           walk:'15 min from station', pram:'Mix of bridges — carrier helpful' },
         { n:11, cat:'food', name:'Cannaregio / Bacari Wine Bars', lat:45.4440, lng:12.3310,
-          desc:'Local drinking culture — cicchetti (small plates)', cost:'€€', toddler:'🟡',
+          desc:'Local cicchetti zone for easier, cheaper meals than San Marco', cost:'€€', toddler:'🟡',
           walk:'10 min from station', pram:'Narrow streets, some steps' },
         { n:12, cat:'food', name:'Orto dei Carmini Hidden Garden', lat:45.4320, lng:12.3240,
-          desc:'Secret garden oasis away from crowds', cost:'Free', toddler:'🟢',
-          walk:'20 min from St Mark\'s', pram:'Peaceful spot, pram-accessible' },
+          desc:'Quiet green pocket when Venice gets too busy', cost:'Free', toddler:'🟢',
+          walk:'8 min from stay', pram:'Peaceful spot, pram-accessible' },
+        { n:13, cat:'food', name:'Gelateria Furlan', lat:45.4362, lng:12.3347,
+          desc:'Small local-favourite gelato stop mentioned in the notes', cost:'€', toddler:'🟢',
+          walk:'12 min from stay', pram:'Quick stop' },
 
         // Hidden Gems
-        { n:13, cat:'gem', name:'Basilica dei Frari', lat:45.4367, lng:12.3264,
+        { n:14, cat:'gem', name:'Basilica dei Frari', lat:45.4367, lng:12.3264,
           desc:'Massive Gothic church with Titian masterpieces', cost:'€3', toddler:'🟡',
-          walk:'15 min from Rialto', pram:'Some steps, but manageable' },
-        { n:14, cat:'gem', name:'Peggy Guggenheim Collection', lat:45.4309, lng:12.3319,
-          desc:'Modern art in a Grand Canal palace', cost:'€18', toddler:'🟡',
-          walk:'10 min from St Mark\'s', pram:'Museum accessible, garden lovely' },
+          walk:'10 min from stay', pram:'Some steps, but manageable' },
+        { n:15, cat:'gem', name:'Peggy Guggenheim Collection', lat:45.4309, lng:12.3319,
+          desc:'Modern art in a Grand Canal palace', cost:'€18', toddler:'🔴',
+          walk:'10 min from stay', pram:'Museum accessible, but not very toddler-friendly' },
     ];
 
     // Build sidebar
@@ -207,7 +210,7 @@
         <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Accommodation</div>
         <div class="loc-info">
             <div class="loc-name">S&L Apartment Dorsoduro ✅ BOOKED</div>
-            <div class="loc-desc">Canal view apartment hosted by Luca. $1,165.41 AUD / 3 nights. Check-in Jun 15 after 3 PM. Free cancellation before Jun 10.</div>
+            <div class="loc-desc">Airbnb in Dorsoduro, hosted by Luca. $1,165.41 AUD / 3 nights. Check-in Mon 15 Jun after 3 PM, check-out Thu 18 Jun by 10 AM. Free cancellation before 3 PM Jun 10; partial refund before check-in. Payment scheduled Jun 2. Important: stairs only, no smoke alarm listed, and still need to confirm toddler occupancy + ask about a cot. No direct Airbnb link saved in notes yet.</div>
         </div>
     </div>`;
 
@@ -307,7 +310,7 @@
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
         // Special handling for distant Burano - zoom out more
-        const zoomLevel = n === 7 ? 11 : 15;
+        const zoomLevel = n === 7 ? 11 : (n === 6 || n === 8 ? 12 : 15);
         map.flyTo([lat, lng], zoomLevel, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }

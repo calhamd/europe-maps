@@ -125,38 +125,46 @@
     const locations = [
         // Transport
         { n:1, cat:'transport', name:'Innsbruck Hauptbahnhof', lat:47.2632, lng:11.4010,
-          desc:'Main train station — your arrival point', cost:'N/A', toddler:'🟢',
-          walk:'Gateway to city' },
+          desc:'Main train station — your arrival/departure point', cost:'N/A', toddler:'🟢',
+          walk:'10 min to stay' },
+
+        // Booked stay
+        { n:2, cat:'stay', name:'Kaiser Max Design Appartements ✅', lat:47.2686, lng:11.3936,
+          desc:'BOOKED — Herzog-Friedrich-Straße 23. Mountain View apartment. Booking.com ref 6162315308, PIN 9952. Check-in 15:00–21:00, check-out 06:00–10:00.', cost:'€639.96', toddler:'🟢',
+          walk:'In Altstadt' },
 
         // Core Attractions
-        { n:2, cat:'attraction', name:'Golden Roof / Altstadt', lat:47.2685, lng:11.3935,
+        { n:3, cat:'attraction', name:'Golden Roof / Altstadt', lat:47.2685, lng:11.3935,
           desc:'Historic old town center with iconic golden roof', cost:'Free', toddler:'🟢',
-          walk:'Heart of Innsbruck' },
-        { n:3, cat:'attraction', name:'Nordkette Cable Car', lat:47.2700, lng:11.3960,
-          desc:'Spectacular alpine cable car to 2,334m', cost:'€35', toddler:'🟡',
+          walk:'1 min from stay' },
+        { n:4, cat:'attraction', name:'Nordkette Cable Car', lat:47.2700, lng:11.3960,
+          desc:'Spectacular alpine cable car to 2,334m', cost:'€35–44', toddler:'🟡',
           walk:'5 min from Golden Roof' },
-        { n:4, cat:'attraction', name:'Maria Theresa Street', lat:47.2650, lng:11.3945,
+        { n:5, cat:'attraction', name:'Maria Theresa Street', lat:47.2650, lng:11.3945,
           desc:'Grand pedestrian street with mountain views', cost:'Free', toddler:'🟢',
-          walk:'2 min from Golden Roof' },
-        { n:5, cat:'attraction', name:'Inn River Walk', lat:47.2640, lng:11.3900,
+          walk:'4 min from stay' },
+        { n:6, cat:'attraction', name:'Inn River Walk', lat:47.2640, lng:11.3900,
           desc:'Scenic riverside promenade with Alpine backdrop', cost:'Free', toddler:'🟢',
-          walk:'5 min from center' },
+          walk:'6 min from stay' },
 
         // Family & Nature
-        { n:6, cat:'family', name:'Alpenzoo', lat:47.2730, lng:11.3930,
-          desc:'High-altitude zoo with native Alpine animals', cost:'€12', toddler:'🟢',
-          walk:'10 min from center' },
-        { n:7, cat:'family', name:'Hungerburg Funicular', lat:47.2720, lng:11.3960,
-          desc:'Modern funicular to Hungerburg plateau', cost:'€4.80', toddler:'🟢',
-          walk:'8 min from center' },
+        { n:7, cat:'family', name:'Alpenzoo', lat:47.2730, lng:11.3930,
+          desc:'Compact alpine zoo — one of the best toddler options here', cost:'€9.50–12', toddler:'🟢',
+          walk:'10 min tram/bus' },
+        { n:8, cat:'family', name:'Hungerburg Funicular', lat:47.2720, lng:11.3960,
+          desc:'Modern funicular to Hungerburg plateau', cost:'€8 round trip', toddler:'🟡',
+          walk:'8 min from stay' },
 
         // Hidden Gems
-        { n:8, cat:'gem', name:'Ambras Castle', lat:47.2560, lng:11.4340,
-          desc:'Renaissance castle with stunning collections', cost:'€14', toddler:'🟡',
-          walk:'20 min (bus)' },
-        { n:9, cat:'gem', name:'Promenade Cafés along Inn', lat:47.2620, lng:11.3870,
-          desc:'Charming waterfront cafés with mountain views', cost:'€€', toddler:'🟢',
-          walk:'7 min from center' },
+        { n:9, cat:'gem', name:'Ambras Castle', lat:47.2560, lng:11.4340,
+          desc:'Renaissance castle with gardens and collections', cost:'€12–14', toddler:'🟡',
+          walk:'20 min by bus' },
+        { n:10, cat:'gem', name:'Promenade Cafés along Inn', lat:47.2620, lng:11.3870,
+          desc:'Calm riverside café stretch with mountain views', cost:'€€', toddler:'🟢',
+          walk:'7 min from stay' },
+        { n:11, cat:'gem', name:'Swarovski Crystal Worlds', lat:47.2945, lng:11.5898,
+          desc:'Quirky indoor/outdoor crystal attraction in Wattens', cost:'€22', toddler:'🟢',
+          walk:'20 min by bus/car' },
     ];
 
     // Build sidebar
@@ -165,6 +173,7 @@
 
     const cats = [
         { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'stay', label:'🏨 Booked Accommodation', color: COLORS.stay },
         { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
         { id:'family', label:'🎯 Family & Nature', color: COLORS.family },
         { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
@@ -186,19 +195,19 @@
 
     // Stay area box
     html += `<div class="stay-box">
-        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Stay Notes</div>
         <div class="loc-info">
-            <div class="loc-name">Altstadt (Old Town)</div>
-            <div class="loc-desc">Within walking distance of Golden Roof and all attractions. Traditional Alpine charm. ~€120/night for 1-bed apartment.</div>
+            <div class="loc-name">Kaiser Max Design Appartements ✅</div>
+            <div class="loc-desc">Herzog-Friedrich-Straße 23. Booking.com ref 6162315308, PIN 9952. Check-in Thu 11 Jun 15:00–21:00, check-out Sat 13 Jun 06:00–10:00. Phone +43 676 7417455. Free cancellation until May 20 23:59. Right in the old town.</div>
         </div>
     </div>`;
 
     // Day trip note
     html += `<div class="day-trip-note">
-        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>✨ Day Trip</div>
+        <div class="cat-label"><span class="cat-dot" style="background:${COLORS.gem}"></span>✨ Optional Extra</div>
         <div class="loc-info">
-            <div class="loc-name">Swarovski Crystal World</div>
-            <div class="loc-desc">Magical crystal experience in Wattens. 20 min by bus. €22 entry. 🟢 Family-friendly with interactive exhibits.</div>
+            <div class="loc-name">Swarovski Crystal Worlds</div>
+            <div class="loc-desc">Now pinned on the map too — quirky, sparkly, and a decent rainy-day family option in Wattens.</div>
         </div>
     </div>`;
 

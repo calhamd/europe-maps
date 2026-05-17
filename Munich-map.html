@@ -128,6 +128,11 @@
           desc:'Main train station — your arrival point', cost:'N/A', toddler:'🟢',
           walk:'Central hub' },
 
+        // Booked Accommodation
+        { n:17, cat:'stay', name:'Bayer 89 Vi Vadi Hotel ✅', lat:48.1390, lng:11.5509,
+          desc:'BOOKED — Bayerstraße 89, Ludwigsvorstadt. Family room, Booking.com ref 5364729155, PIN 0842. Check-in from 15:00, check-out by 12:00.', cost:'€780.11 / 3 nights', toddler:'🟢',
+          walk:'8 min from Hauptbahnhof' },
+
         // Core Attractions — NOTE: slightly offset coords for dense cluster
         { n:2, cat:'attraction', name:'Marienplatz & Glockenspiel', lat:48.1380, lng:11.5755,
           desc:'Iconic square, hourly Glockenspiel chimes', cost:'Free', toddler:'🟡',
@@ -156,17 +161,20 @@
 
         // Beer Gardens & Food
         { n:10, cat:'food', name:'Augustiner Keller', lat:48.1445, lng:11.5524,
-          desc:'"Much better than Hofbräuhaus" — Reddit', cost:'€€', toddler:'🟢',
-          walk:'12 min from Marienplatz' },
+          desc:'Classic first-night beer garden option near your hotel', cost:'€€', toddler:'🟢',
+          walk:'8 min from stay' },
         { n:11, cat:'food', name:'Michaeligarten', lat:48.1156, lng:11.6247,
           desc:'Hidden beer garden by the water in Ostpark', cost:'€', toddler:'🟢',
           walk:'25 min (U-Bahn)' },
         { n:12, cat:'food', name:'Hirschgarten', lat:48.1522, lng:11.5130,
-          desc:'World\'s largest beer garden + deer park!', cost:'€€', toddler:'🟢',
+          desc:'World\'s largest beer garden + deer park', cost:'€€', toddler:'🟢',
           walk:'25 min (tram)' },
         { n:13, cat:'food', name:'Hofbräukeller', lat:48.1310, lng:11.5927,
           desc:'Quieter Hofbräu alternative, great outdoor garden', cost:'€€', toddler:'🟢',
           walk:'18 min from Marienplatz' },
+        { n:18, cat:'food', name:'Paulaner am Nockherberg', lat:48.1232, lng:11.5848,
+          desc:'Big traditional beer hall/restaurant with easier family logistics', cost:'€€', toddler:'🟢',
+          walk:'15 min by tram/taxi' },
 
         // Hidden Gems
         { n:14, cat:'gem', name:'Alte Utting Bar', lat:48.1187, lng:11.5393,
@@ -186,6 +194,7 @@
 
     const cats = [
         { id:'transport', label:'🚂 Transport', color: COLORS.transport },
+        { id:'stay', label:'🏨 Booked Accommodation', color: COLORS.stay },
         { id:'attraction', label:'🏛️ Core Attractions', color: COLORS.attraction },
         { id:'food', label:'🍺 Beer Gardens & Food', color: COLORS.food },
         { id:'gem', label:'💎 Hidden Gems', color: COLORS.gem },
@@ -209,8 +218,8 @@
     html += `<div class="stay-box">
         <div class="cat-label"><span class="cat-dot" style="background:${COLORS.stay}"></span>🏨 Recommended Stay Area</div>
         <div class="loc-info">
-            <div class="loc-name">Altstadt (Old Town)</div>
-            <div class="loc-desc">Between Hauptbahnhof & Marienplatz. Walking distance to everything. ~€150/night for 1-bed apartment.</div>
+            <div class="loc-name">Bayer 89 Vi Vadi Hotel ✅</div>
+            <div class="loc-desc">Bayerstraße 89, Ludwigsvorstadt. Family room. Booking.com ref 5364729155, PIN 0842. Check-in Mon 8 Jun from 15:00, check-out Thu 11 Jun by 12:00. Phone +49 89 24415880. Free cancellation until Jun 6 23:59. Nice practical base for airport/train arrival.</div>
         </div>
     </div>`;
 
@@ -283,8 +292,10 @@
 
     // Walking time lines (only the most useful ones)
     const walks = [
-        { from:[48.1408,11.5593], to:[48.1380,11.5755], label:'15 min' },   // Hbf → Marienplatz
-        { from:[48.1437,11.5872], to:[48.1641,11.5841], label:'5 min' },    // Eisbach → English Garden
+        { from:[48.1408,11.5593], to:[48.1390,11.5509], label:'8 min' },    // Hbf → Hotel
+        { from:[48.1390,11.5509], to:[48.1380,11.5755], label:'18 min' },    // Hotel → Marienplatz
+        { from:[48.1408,11.5593], to:[48.1380,11.5755], label:'15 min' },    // Hbf → Marienplatz
+        { from:[48.1437,11.5872], to:[48.1641,11.5841], label:'5 min' },     // Eisbach → English Garden
     ];
 
     walks.forEach(w => {
@@ -308,7 +319,7 @@
 
     // Fly to function for sidebar clicks
     function flyTo(lat, lng, n) {
-        map.flyTo([lat, lng], 16, { duration: 0.8 });
+        map.flyTo([lat, lng], (n === 11 || n === 12 || n === 15) ? 12 : 16, { duration: 0.8 });
         setTimeout(() => markers[n].openPopup(), 900);
     }
     </script>
